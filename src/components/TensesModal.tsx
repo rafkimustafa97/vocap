@@ -257,12 +257,36 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
                 </span>
               </div>
 
-              {/* To Be & Auxiliary Rule Note */}
-              <div className="bg-blue-50/60 rounded-xl p-3 border border-blue-100 text-xs space-y-1">
-                <span className="font-bold text-blue-900 flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5 text-blue-600" /> Aturan To Be & Auxiliary Verb:
-                </span>
-                <p className="text-slate-700 leading-relaxed">{tense.toBeExplanation}</p>
+              {/* Modern Clean Aturan To Be & Auxiliary Verb Box */}
+              <div className="bg-slate-900 text-slate-100 rounded-2xl p-3.5 border border-slate-800 shadow-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black tracking-wider text-amber-400 uppercase flex items-center gap-1.5">
+                    <Info className="w-4 h-4 text-amber-400" /> ATURAN TO BE & AUXILIARY VERB
+                  </span>
+                  <span className="text-[10px] bg-slate-800 text-indigo-300 px-2 py-0.5 rounded-full font-mono border border-slate-700">
+                    Grammar Rules
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80 space-y-0.5">
+                    <span className="text-[10px] text-blue-400 font-bold uppercase block font-mono">
+                      ⚡ Auxiliary Verb (Kata Kerja Bantu):
+                    </span>
+                    <p className="text-slate-200 font-semibold leading-snug">
+                      {tense.toBeStructure?.auxiliaryText || tense.toBeExplanation}
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/80 space-y-0.5">
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase block font-mono">
+                      ✨ To Be Structure (Nomina & Pasif):
+                    </span>
+                    <p className="text-slate-200 font-semibold leading-snug">
+                      {tense.toBeStructure?.toBeText || 'is / am / are / was / were'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* ACTIVE VOICE SECTION */}
