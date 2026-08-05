@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, Sparkles, BookOpen, Layers, Trophy, CheckCircle, ShieldCheck, ArrowRight, Star, Flame, Zap, Award } from 'lucide-react';
+import { signInWithGoogle } from '../utils/supabaseClient';
 
 interface LandingPageViewProps {
   onOpenRegister: () => void;
@@ -7,6 +8,15 @@ interface LandingPageViewProps {
 }
 
 export const LandingPageView: React.FC<LandingPageViewProps> = ({ onOpenRegister, onOpenLogin }) => {
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (e: any) {
+      console.error('Google login error:', e);
+      onOpenLogin();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white selection:bg-blue-500 selection:text-white">
       
@@ -28,23 +38,36 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onOpenRegister
             Metode ilmiah <strong>Spaced Repetition (5+1+1)</strong>, <strong>9 Tenses Engine Terpresisi</strong> (Fonetik, Pasif Voice, & Afiksasi), serta <strong>Card Board 5 Jenis Quiz Akademis</strong>.
           </p>
 
-          {/* Call-To-Action Buttons */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+          {/* SINGLE 1-CLICK GOOGLE LOGIN CALL-TO-ACTION */}
+          <div className="pt-4 flex flex-col items-center justify-center max-w-md mx-auto w-full">
             <button
               type="button"
-              onClick={onOpenRegister}
-              className="w-full sm:w-auto flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-blue-600/30 active:scale-98 transition-all flex items-center justify-center gap-2 text-base"
+              onClick={handleGoogleLogin}
+              className="w-full bg-white hover:bg-slate-100 text-slate-900 font-black py-4 px-8 rounded-2xl shadow-xl shadow-blue-500/20 active:scale-98 transition-all flex items-center justify-center gap-3 text-base md:text-lg border-2 border-slate-200"
             >
-              🚀 Mulai Belajar Gratis (Daftar)
+              <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              🚀 Masuk / Daftar 1-Click dengan Google
             </button>
-
-            <button
-              type="button"
-              onClick={onOpenLogin}
-              className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold py-4 px-7 rounded-2xl active:scale-98 transition-all flex items-center justify-center gap-2 text-base"
-            >
-              Sudah Punya Akun? (Masuk)
-            </button>
+            <span className="text-xs text-slate-400 font-semibold mt-2">
+              Langsung masuk menggunakan akun Gmail Anda tanpa ketik password.
+            </span>
           </div>
 
           {/* Quick Badges Bar */}
@@ -98,66 +121,18 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onOpenRegister
 
           {/* Pillar 3: Card Board 5 Jenis Quiz */}
           <div className="bg-slate-800/60 border border-slate-700/80 rounded-3xl p-6 space-y-3 hover:border-blue-500/50 transition-all">
-            <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center font-black text-xl">
-              🎮
-            </div>
-            <h3 className="text-xl font-bold text-white">Card Board 5 Jenis Quiz (Level 1-5)</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Kuis berjenjang dari Multiple Choice (Level 1), Matching Pairs (Level 2), Synonym & Antonym (Level 3), PTE Fill-in-Blank (Level 4), hingga Active Recall Spelling (Level 5).
-            </p>
-          </div>
-
-          {/* Pillar 4: Gamifikasi Title Ranks & Badges */}
-          <div className="bg-slate-800/60 border border-slate-700/80 rounded-3xl p-6 space-y-3 hover:border-blue-500/50 transition-all">
-            <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-2xl flex items-center justify-center font-black text-xl">
-              🏆
-            </div>
-            <h3 className="text-xl font-bold text-white">10 Gelar Rank & 12 Badges</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Dapatkan XP dari setiap kuis dan naik gelar dari <em>Novice Explorer</em> (0 XP) hingga puncak tertinggi <em>PTE 90 Perfect Grandmaster</em> (100.000+ XP).
-            </p>
-          </div>
-
-          {/* Pillar 5: Master Dataset 3.655 Kata */}
-          <div className="bg-slate-800/60 border border-slate-700/80 rounded-3xl p-6 space-y-3 hover:border-blue-500/50 transition-all col-span-1 md:col-span-2">
             <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center font-black text-xl">
-              📖
+              📋
             </div>
-            <h3 className="text-xl font-bold text-white">Database 3.655 Kata Akademis LENGKAP</h3>
+            <h3 className="text-xl font-bold text-white">Card Board 5 Quiz Master</h3>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Terdiri dari 245 kata Academic Word List (AWL), 1.475 kata General Service List (NGSL), 1.698 kata Oxford 10th Vocabulary, dan 237 Appendix Teknis lengkap dengan IPA, arti, kolokasi, dan contoh kalimat baku.
+              5 variasi ujian otomatis: Multi-Choice Arti, Tebak Bahasa Inggris, Audio Pronunciation, Word Family Tree, & Context Sentence Fill-in.
             </p>
           </div>
 
-        </div>
-
-        {/* Gamification Preview Banner */}
-        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 rounded-[36px] p-8 border border-blue-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="space-y-2 text-center md:text-left">
-            <span className="bg-amber-400/20 text-amber-300 text-xs font-black px-3 py-1 rounded-full uppercase border border-amber-400/30">
-              Gamified Learning System
-            </span>
-            <h3 className="text-2xl md:text-3xl font-black text-white">Uji Kemampuanmu & Raih Gelar Grandmaster!</h3>
-            <p className="text-xs md:text-sm text-slate-300 max-w-xl">
-              Setiap aktivitas kuis dan hafalan akan memberikan XP. Kumpulkan XP untuk membuka 12 Achievement Badges langka dan gelar kehormatan akademis.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onOpenRegister}
-            className="bg-white text-slate-900 hover:bg-slate-100 font-black py-4 px-8 rounded-2xl shadow-lg active:scale-95 transition-all text-sm shrink-0"
-          >
-            🎯 Buat Akun & Mulai Sekarang
-          </button>
         </div>
 
       </div>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800 text-center py-6 text-xs text-slate-500">
-        Standard: Pearson PTE Academic & Cambridge English Grammar Guidelines • Lumina Learn System
-      </footer>
 
     </div>
   );
