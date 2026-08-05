@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Word } from '../types';
+import { Word, WordUserStat } from '../types';
 import { speakText } from '../utils/speech';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -16,19 +16,24 @@ import {
   Grid,
   ChevronDown,
   Navigation,
-  Info
+  Info,
+  RotateCcw
 } from 'lucide-react';
 
 interface FlashcardViewProps {
   words: Word[];
+  userStats: Record<number, WordUserStat>;
   onMarkWord: (wordId: number, isMastered: boolean) => void;
+  onResetWord: (wordId: number) => void;
   onOpenTenses: (word: Word) => void;
   onSelectWordByName?: (wordName: string) => void;
 }
 
 export const FlashcardView: React.FC<FlashcardViewProps> = ({
   words,
+  userStats,
   onMarkWord,
+  onResetWord,
   onOpenTenses,
   onSelectWordByName
 }) => {
@@ -51,6 +56,9 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
     );
   }
 
+  const currentStat = userStats?.[currentWord.id];
+  const isWordMastered = currentStat?.status === 'mastered';
+
   const handleJumpToWord = (index: number) => {
     setIsFlipped(false);
     setCurrentIndex(index);
@@ -64,6 +72,10 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
       setDirection(null);
       setCurrentIndex((prev) => (prev + 1) % words.length);
     }, 200);
+  };
+
+  const handleResetCurrentWord = () => {
+    onResetWord(currentWord.id);
   };
 
   const toggleFlip = () => {
@@ -92,304 +104,310 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
               onChange={(e) => handleJumpToWord(Number(e.target.value))}
               className="bg-slate-100 border border-slate-300 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px] truncate"
             >
-              {words.map((w, idx) => (
-                <option key={w.id} value={idx}>
-                  #{idx + 1}. {w.word}
-                </option>
-              ))}
+              {words.map((w, idx) => {
+                const wStat = userStats?.[w.id];
+                const isMastered = wStat?.status === 'mastered';
+                return (
+                  <option key={w.id} value={idx}>
+                    #{idx + 1}. {w.word} {isMastered ? '✓ (Mastered)' : ''}
+                  </option>
+                );
+              })}
             </select>
 
+            {/* Grid Toggle Button */}
             <button
               type="button"
               onClick={() => setIsJumpGridExpanded(!isJumpGridExpanded)}
-              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl border border-blue-200 text-xs font-bold flex items-center gap-1 transition-all"
-              title="Tampilkan grid lompat kata"
+              className={`p-1.5 rounded-xl border transition-all ${
+                isJumpGridExpanded
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+              }`}
+              title="Tampilkan Kisi Semua Kata"
             >
-              <Grid className="w-3.5 h-3.5" />
+              <Grid className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* HORIZONTAL SCROLLING WORD PILLS */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar scroll-smooth">
-          {words.map((w, idx) => {
-            const isCurrent = idx === currentIndex;
-            return (
-              <button
-                key={w.id}
-                type="button"
-                onClick={() => handleJumpToWord(idx)}
-                className={`px-3 py-1 rounded-xl text-xs font-black shrink-0 transition-all ${
-                  isCurrent
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-300 scale-105'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/80'
-                }`}
-              >
-                #{idx + 1} {w.word}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* EXPANDABLE GRID PICKER (FOR ALL 10, 20, 30 WORDS) */}
+        {/* Collapsible Jump Grid Pills */}
         {isJumpGridExpanded && (
-          <div className="pt-3 border-t border-slate-100 space-y-2 animate-in fade-in zoom-in duration-200">
-            <span className="text-[11px] font-bold text-slate-500 block">
-              Pilih Kata Mana Saja untuk Dibaca (Bebas Lompat Dalam Porsi {words.length} Kata):
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
-              {words.map((w, idx) => {
-                const isCurrent = idx === currentIndex;
-                return (
-                  <button
-                    key={w.id}
-                    type="button"
-                    onClick={() => {
-                      handleJumpToWord(idx);
-                      setIsJumpGridExpanded(false);
-                    }}
-                    className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all flex items-center justify-between ${
-                      isCurrent
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md font-black'
-                        : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="truncate">#{idx + 1}. {w.word}</span>
-                    <span className="text-[10px] opacity-80 uppercase ml-1">{w.pos.slice(0, 3)}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="pt-2 border-t border-slate-100 grid grid-cols-5 sm:grid-cols-10 gap-1.5 animate-fadeIn">
+            {words.map((w, idx) => {
+              const wStat = userStats?.[w.id];
+              const isMastered = wStat?.status === 'mastered';
+              const isCurrent = idx === currentIndex;
+
+              return (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => {
+                    handleJumpToWord(idx);
+                    setIsJumpGridExpanded(false);
+                  }}
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-black truncate transition-all text-center border ${
+                    isCurrent
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-105'
+                      : isMastered
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                  title={`${w.word} (${w.meaning_id})`}
+                >
+                  {idx + 1}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Top Counter & 9 Tenses Action */}
-      <div className="w-full flex items-center justify-between px-2 text-xs font-bold text-slate-600">
-        <span className="bg-slate-200/80 px-3 py-1 rounded-full">
-          Kata {currentIndex + 1} dari {words.length} (No. #{currentWord.no})
-        </span>
-        <button
-          type="button"
-          onClick={() => onOpenTenses(currentWord)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-full font-bold shadow-md shadow-indigo-200 flex items-center gap-1.5 transition-all active:scale-95"
-        >
-          <Sparkles className="w-3.5 h-3.5" /> 9 Tenses Context
-        </button>
-      </div>
-
-      {/* Main Flashcard Container */}
+      {/* Main Flashcard Card */}
       <motion.div
         key={currentWord.id}
-        initial={{ opacity: 0, x: direction === 'right' ? 100 : direction === 'left' ? -100 : 0 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        className="w-full bg-white border border-slate-200 rounded-3xl p-6 shadow-xl relative min-h-[440px] flex flex-col justify-between"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="w-full bg-white rounded-3xl border border-slate-200 shadow-md p-5 sm:p-6 space-y-4 relative overflow-hidden"
       >
-        {/* Header: POS & Source */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            {currentWord.pos}
-          </span>
-          <span className="text-xs text-slate-400 font-semibold italic">
-            Source: {currentWord.source}
-          </span>
+        {/* Top Header info */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-slate-800 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+              #{currentWord.no}
+            </span>
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 uppercase tracking-wider">
+              {currentWord.pos}
+            </span>
+            {currentWord.source && (
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
+                {currentWord.source}
+              </span>
+            )}
+          </div>
+
+          {/* Dynamic Mastery Badge */}
+          <div>
+            {isWordMastered ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-[11px] rounded-full border border-emerald-200 shadow-2xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Mastered
+              </span>
+            ) : currentStat?.status === 'learning' ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 font-extrabold text-[11px] rounded-full border border-blue-200">
+                <RotateCw className="w-3.5 h-3.5 text-blue-600 text-[10px]" /> Learning
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 font-extrabold text-[11px] rounded-full border border-slate-200">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> New
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* CARD CONTENT AREA */}
-        <div className="flex-1 flex flex-col justify-between">
+        {/* Card Body Front & Back Flip Animation */}
+        <div className="min-h-[280px] flex flex-col justify-between">
           <AnimatePresence mode="wait">
             {!isFlipped ? (
-              // FRONT OF FLASHCARD
+              /* FRONT OF CARD */
               <motion.div
                 key="front"
-                initial={{ opacity: 0, rotateY: -90 }}
-                animate={{ opacity: 1, rotateY: 0 }}
-                exit={{ opacity: 0, rotateY: 90 }}
-                transition={{ duration: 0.25 }}
-                className="flex-1 flex flex-col justify-between space-y-4 my-2 text-center"
+                initial={{ rotateY: -90, opacity: 0 }}
+                animate={{ rotateY: 0, opacity: 1 }}
+                exit={{ rotateY: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4 text-center py-2"
               >
-                <div className="space-y-3">
-                  {/* Word & Audio */}
-                  <div className="flex items-center justify-center gap-3">
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-                      {currentWord.word}
-                    </h1>
+                <div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    {currentWord.word}
+                  </h2>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span className="text-sm font-semibold text-slate-500 font-mono">
+                      {currentWord.ipa || `/${currentWord.word}/`}
+                    </span>
                     <button
                       type="button"
                       onClick={() => speakText(currentWord.word)}
-                      className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full transition-all shadow-inner"
-                      title="Dengarkan pengucapan"
+                      className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full transition-colors active:scale-95"
+                      title="Dengar Pengucapan Audio"
                     >
-                      <Volume2 className="w-6 h-6" />
+                      <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
+                </div>
 
-                  {/* IPA */}
-                  <div className="inline-block bg-slate-50 px-4 py-1.5 rounded-xl border border-slate-100">
-                    <p className="text-sm font-semibold text-slate-600 font-mono">
-                      IPA: {currentWord.ipa} <span className="text-slate-400 font-sans">({currentWord.ipa_perkiraan})</span>
-                    </p>
+                {/* Primary Meaning */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                    Arti Bahasa Indonesia
+                  </span>
+                  <p className="text-base sm:text-lg font-bold text-slate-800 leading-snug">
+                    {currentWord.meaning_id}
+                  </p>
+                </div>
+
+                {/* Part of Speech & Word Structure info */}
+                <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-2xl p-3.5 border border-blue-100 text-left space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                        Informasi Kelas Kata ({currentWord.pos.toUpperCase()})
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-700 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+                      {isVerb ? 'Kata Kerja' : 'Nominal / Sifat'}
+                    </span>
                   </div>
 
-                  {/* Meaning */}
-                  <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 w-full">
-                    <p className="text-xs text-amber-700 font-bold uppercase tracking-wider mb-1">Arti (Indonesia):</p>
-                    <p className="text-xl md:text-2xl font-bold text-slate-900">
-                      {currentWord.meaning_id}
-                    </p>
-                  </div>
-
-                  {/* CONDITIONAL V1-V3 DISPLAY (VERB VS NON-VERB) */}
                   {isVerb ? (
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-left">
-                      <p className="text-[11px] text-slate-400 font-bold uppercase mb-1.5">Bentuk Kata Kerja (V1, V2, V3, V-ing):</p>
-                      <div className="grid grid-cols-4 gap-1.5 text-center text-xs font-mono">
-                        <div className="bg-white p-2 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 block font-sans">V1</span>
-                          <strong className="text-blue-700">{currentWord.v1 !== '-' ? currentWord.v1 : currentWord.word}</strong>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 block font-sans">V2</span>
-                          <strong className="text-blue-700">{currentWord.v2 !== '-' ? currentWord.v2 : `${currentWord.word}ed`}</strong>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 block font-sans">V3</span>
-                          <strong className="text-blue-700">{currentWord.v3 !== '-' ? currentWord.v3 : `${currentWord.word}ed`}</strong>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 block font-sans">V-ing</span>
-                          <strong className="text-blue-700">{currentWord.v_ing !== '-' ? currentWord.v_ing : `${currentWord.word}ing`}</strong>
-                        </div>
+                    <div className="grid grid-cols-4 gap-1.5 text-center pt-1">
+                      <div className="bg-white p-1.5 rounded-xl border border-blue-100 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-400 block">V1</span>
+                        <span className="text-xs font-black text-slate-800 truncate block">
+                          {currentWord.v1 && currentWord.v1 !== '-' ? currentWord.v1 : currentWord.word}
+                        </span>
+                      </div>
+                      <div className="bg-white p-1.5 rounded-xl border border-blue-100 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-400 block">V2</span>
+                        <span className="text-xs font-black text-slate-800 truncate block">
+                          {currentWord.v2 && currentWord.v2 !== '-' ? currentWord.v2 : '-'}
+                        </span>
+                      </div>
+                      <div className="bg-white p-1.5 rounded-xl border border-blue-100 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-400 block">V3</span>
+                        <span className="text-xs font-black text-slate-800 truncate block">
+                          {currentWord.v3 && currentWord.v3 !== '-' ? currentWord.v3 : '-'}
+                        </span>
+                      </div>
+                      <div className="bg-white p-1.5 rounded-xl border border-blue-100 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-400 block">V-ing</span>
+                        <span className="text-xs font-black text-slate-800 truncate block">
+                          {currentWord.v_ing && currentWord.v_ing !== '-' ? currentWord.v_ing : '-'}
+                        </span>
                       </div>
                     </div>
                   ) : (
-                    /* Non-Verb Word Class & Affix Summary Card */
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-left space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Info className="w-3.5 h-3.5 text-blue-600" /> Kelas Kata:
-                        </span>
-                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md uppercase font-extrabold">
-                          {currentWord.pos}
-                        </span>
+                    <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-blue-100 shadow-2xs text-xs">
+                      <span className="text-slate-500 font-medium">Bentuk Imbuhan (Affix):</span>
+                      <div className="flex items-center gap-1.5">
+                        {currentWord.prefix_info && (
+                          <span className="bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-md border border-purple-200">
+                            Prefix: {currentWord.prefix_info}
+                          </span>
+                        )}
+                        {currentWord.suffix_info && (
+                          <span className="bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-md border border-amber-200">
+                            Suffix: {currentWord.suffix_info}
+                          </span>
+                        )}
+                        {!currentWord.prefix_info && !currentWord.suffix_info && (
+                          <span className="text-slate-600 font-semibold italic">Root Word</span>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-600 font-medium">
-                        Kata ini bertipe <strong>{currentWord.pos.toUpperCase()}</strong>. Menggunakan struktur kalimat Nominal / Predikatif.
-                      </p>
-                      {(currentWord.prefix_info || currentWord.suffix_info) && (
-                        <div className="pt-1 flex flex-wrap gap-2 text-[10px] font-mono">
-                          {currentWord.prefix_info && (
-                            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
-                              Prefix: {currentWord.prefix_info}
-                            </span>
-                          )}
-                          {currentWord.suffix_info && (
-                            <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200">
-                              Suffix: {currentWord.suffix_info}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Example Sentence */}
-                  {currentWord.example && currentWord.example !== '-' && (
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-left w-full relative">
-                      <p className="text-[11px] text-slate-400 font-bold uppercase mb-1">Contoh Kalimat Akademis:</p>
-                      <p className="text-xs md:text-sm text-slate-700 italic leading-relaxed pr-6">
-                        "{currentWord.example}"
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => speakText(currentWord.example)}
-                        className="absolute top-3 right-3 p-1 text-slate-400 hover:text-blue-600"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
                     </div>
                   )}
                 </div>
+
+                {/* Open 9 Tenses Engine Button */}
+                <button
+                  type="button"
+                  onClick={() => onOpenTenses(currentWord)}
+                  className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-98"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  Buka 9 Tenses Engine & Aplikasi Kalimat
+                </button>
               </motion.div>
             ) : (
-              // BACK OF FLASHCARD (WORD FAMILY, COLLOCATIONS, SYNONYMS, ANTONYMS)
+              /* BACK OF CARD */
               <motion.div
                 key="back"
-                initial={{ opacity: 0, rotateY: 90 }}
-                animate={{ opacity: 1, rotateY: 0 }}
-                exit={{ opacity: 0, rotateY: -90 }}
-                transition={{ duration: 0.25 }}
-                className="flex-1 flex flex-col justify-between space-y-4 my-2 text-left"
+                initial={{ rotateY: 90, opacity: 0 }}
+                animate={{ rotateY: 0, opacity: 1 }}
+                exit={{ rotateY: -90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4 py-2"
               >
-                <div className="space-y-4">
-                  {/* Header Word */}
-                  <div className="text-center pb-2 border-b border-slate-100">
-                    <h2 className="text-2xl font-black text-slate-900">{currentWord.word}</h2>
-                    <span className="text-xs text-slate-500 font-semibold">{currentWord.meaning_id}</span>
-                  </div>
+                {/* Example Sentence */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                    Contoh Kalimat Kontekstual
+                  </span>
+                  <p className="text-sm font-semibold text-slate-800 italic leading-relaxed">
+                    "{currentWord.example_sentence || 'Tidak ada contoh kalimat.'}"
+                  </p>
+                </div>
 
-                  {/* WORD FAMILY TREE */}
-                  <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-extrabold text-blue-900">
-                      <Layers className="w-4 h-4 text-blue-600" /> Word Family Tree:
+                {/* Word Family Tree */}
+                <div className="bg-white rounded-2xl p-3.5 border border-slate-200 space-y-2">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                    Pohon Keluarga Kata (Word Family Tree)
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 block">Noun (Benda)</span>
+                      <span className="font-bold text-slate-800">
+                        {currentWord.noun_family || '-'}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Noun:</span>
-                        <span className="font-bold text-blue-800">{currentWord.noun_family || '-'}</span>
-                      </div>
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Verb:</span>
-                        <span className="font-bold text-emerald-800">{currentWord.verb_family || '-'}</span>
-                      </div>
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Adjective:</span>
-                        <span className="font-bold text-amber-800">{currentWord.adj_family || '-'}</span>
-                      </div>
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Adverb:</span>
-                        <span className="font-bold text-purple-800">{currentWord.adv_family || '-'}</span>
-                      </div>
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 block">Verb (Kerja)</span>
+                      <span className="font-bold text-slate-800">
+                        {currentWord.verb_family || '-'}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 block">Adjective (Sifat)</span>
+                      <span className="font-bold text-slate-800">
+                        {currentWord.adj_family || '-'}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 block">Adverb (Keterangan)</span>
+                      <span className="font-bold text-slate-800">
+                        {currentWord.adv_family || '-'}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* COLLOCATIONS */}
-                  {currentWord.collocations && currentWord.collocations.length > 0 && currentWord.collocations[0] !== '-' && (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                        <Tag className="w-3.5 h-3.5 text-blue-600" /> Collocations:
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {currentWord.collocations.map((c, idx) => (
+                {/* Synonyms & Collocations */}
+                <div className="space-y-2 text-xs">
+                  {currentWord.synonyms && currentWord.synonyms.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-500 shrink-0">Sinonim:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {currentWord.synonyms.map((s, idx) => (
                           <span
                             key={idx}
-                            onClick={() => speakText(c)}
-                            className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1 rounded-xl text-xs font-bold border border-blue-200 cursor-pointer flex items-center gap-1 transition-all"
+                            onClick={() => onSelectWordByName && onSelectWordByName(s)}
+                            className="bg-slate-100 hover:bg-blue-100 hover:text-blue-700 cursor-pointer font-bold text-slate-700 px-2 py-0.5 rounded-md text-[11px] transition-colors"
                           >
-                            {c} <Volume2 className="w-3 h-3 opacity-60" />
+                            {s}
                           </span>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* SYNONYMS & ANTONYMS */}
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 space-y-1">
-                      <span className="text-[10px] text-emerald-700 font-extrabold uppercase block">Sinonim:</span>
-                      <p className="font-semibold text-slate-800">
-                        {currentWord.synonyms && currentWord.synonyms.length > 0 ? currentWord.synonyms.join(', ') : '-'}
-                      </p>
+                  {currentWord.collocations && currentWord.collocations.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-500 shrink-0">Kolokasi:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {currentWord.collocations.map((c, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-md text-[11px]"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-
-                    <div className="bg-rose-50/60 p-3 rounded-xl border border-rose-100 space-y-1">
-                      <span className="text-[10px] text-rose-700 font-extrabold uppercase block">Antonim:</span>
-                      <p className="font-semibold text-slate-800">
-                        {currentWord.antonyms && currentWord.antonyms.length > 0 ? currentWord.antonyms.join(', ') : '-'}
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -399,30 +417,42 @@ export const FlashcardView: React.FC<FlashcardViewProps> = ({
           <button
             type="button"
             onClick={toggleFlip}
-            className="w-full mt-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98"
+            className="w-full mt-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
           >
             <RotateCw className="w-4 h-4 text-blue-600" />
             {isFlipped ? 'Lihat Sisi Depan Kartu' : 'Putar Kartu (Detail & Word Family Tree)'}
           </button>
         </div>
 
-        {/* Action Buttons: Belum Hafal / Sudah Hafal */}
-        <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={() => handleNext(false)}
-            className="py-3 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-2xl border border-rose-200 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-          >
-            <XCircle className="w-4 h-4" /> Belum Hafal (+0 XP)
-          </button>
+        {/* Action Buttons: Toggle dynamically between (Belum Hafal + Sudah Hafal) OR (Pelajari Ulang) */}
+        <div className="mt-4 pt-3 border-t border-slate-100">
+          {isWordMastered ? (
+            <button
+              type="button"
+              onClick={handleResetCurrentWord}
+              className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" /> Pelajari Ulang (Reset Progress -5 XP)
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleNext(false)}
+                className="py-3 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-2xl border border-rose-200 flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+              >
+                <XCircle className="w-4 h-4" /> Belum Hafal (+0 XP)
+              </button>
 
-          <button
-            type="button"
-            onClick={() => handleNext(true)}
-            className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-          >
-            <CheckCircle2 className="w-4 h-4" /> Sudah Hafal (+5 XP)
-          </button>
+              <button
+                type="button"
+                onClick={() => handleNext(true)}
+                className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Sudah Hafal (+5 XP)
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 

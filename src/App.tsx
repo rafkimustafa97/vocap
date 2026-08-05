@@ -264,10 +264,10 @@ export default function App() {
         status: 'new'
       };
 
-      const newStreak = isMastered ? existing.correctStreak + 1 : 0;
+      const newStreak = isMastered ? Math.max(3, existing.correctStreak + 1) : 0;
       const newWrongCount = isMastered ? existing.wrongCount : existing.wrongCount + 1;
-      const isWeak = newWrongCount >= 2;
-      const newStatus = newStreak >= 3 ? 'mastered' : 'learning';
+      const isWeak = isMastered ? false : newWrongCount >= 2;
+      const newStatus = isMastered ? 'mastered' : 'learning';
 
       const updatedStats = {
         ...stats,
@@ -276,23 +276,100 @@ export default function App() {
           correctStreak: newStreak,
           wrongCount: newWrongCount,
           isWeakness: isWeak,
-          status: newStatus,
+          status: newStatus as any,
           lastTested: new Date().toISOString()
         }
       };
 
-      const newXp = isMastered ? prev.xp + 5 : prev.xp;
+      const isAlreadyMastered = existing.status === 'mastered';
+      const xpGained = (isMastered && !isAlreadyMastered) ? 5 : 0;
+      const newXp = prev.xp + xpGained;
       
       const masteredCount = Object.values(updatedStats).filter(s => s.status === 'mastered').length;
       const newUnlocked = [...prev.unlockedBadgeIds];
       if (masteredCount >= 100 && !newUnlocked.includes('vocab_100')) newUnlocked.push('vocab_100');
       if (masteredCount >= 3655 && !newUnlocked.includes('vocab_3655')) newUnlocked.push('vocab_3655');
 
+      const targetWordObj = allWords.find((w) => w.id === wordId);
+      const wordName = targetWordObj ? targetWordObj.word : `ID #${wordId}`;
+      const nowStr = new Date().toLocaleString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const newAuditLog: ActivityLogEntry = {
+        id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        timestamp: nowStr,
+        activityType: isMastered ? 'SUDAH_HAFAL' : 'BELUM_HAFAL',
+        description: isMastered
+          ? `Menandai kata "${wordName}" sebagai SUDAH HAFAL (+5 XP). Total kata mastered: ${masteredCount}.`
+          : `Menandai kata "${wordName}" sebagai BELUM HAFAL (Sedang dipelajari).`,
+        xpGained: xpGained,
+        category: 'vocab'
+      };
+
       return {
         ...prev,
         userStats: updatedStats,
         xp: newXp,
-        unlockedBadgeIds: newUnlocked
+        unlockedBadgeIds: newUnlocked,
+        activityLogs: [newAuditLog, ...(prev.activityLogs || [])]
+      };
+    });
+  };
+
+  const handleResetWord = (wordId: number) => {
+    if (!userData || !activeEmail) return;
+
+    setUserData((prev) => {
+      if (!prev) return null;
+
+      const stats = prev.userStats;
+      const existing = stats[wordId];
+      if (!existing) return prev;
+
+      const isPreviouslyMastered = existing.status === 'mastered';
+      const xpDeducted = isPreviouslyMastered ? 5 : 0;
+      const newXp = Math.max(0, prev.xp - xpDeducted);
+
+      const updatedStats = {
+        ...stats,
+        [wordId]: {
+          ...existing,
+          correctStreak: 0,
+          status: 'learning' as const,
+          lastTested: new Date().toISOString()
+        }
+      };
+
+      const masteredCount = Object.values(updatedStats).filter(s => s.status === 'mastered').length;
+      const targetWordObj = allWords.find((w) => w.id === wordId);
+      const wordName = targetWordObj ? targetWordObj.word : `ID #${wordId}`;
+      const nowStr = new Date().toLocaleString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const newAuditLog: ActivityLogEntry = {
+        id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        timestamp: nowStr,
+        activityType: 'BELAJAR_ULANG',
+        description: `Mereset status hafalan kata "${wordName}" (Pelajari Ulang, -5 XP). Total kata mastered: ${masteredCount}.`,
+        xpGained: -xpDeducted,
+        category: 'vocab'
+      };
+
+      return {
+        ...prev,
+        userStats: updatedStats,
+        xp: newXp,
+        activityLogs: [newAuditLog, ...(prev.activityLogs || [])]
       };
     });
   };
@@ -488,7 +565,9 @@ export default function App() {
             {activeView === 'learn' && (
               <FlashcardView
                 words={currentTargetWords}
+                userStats={userData.userStats}
                 onMarkWord={handleMarkWord}
+                onResetWord={handleResetWord}
                 onOpenTenses={handleOpenTenses}
                 onSelectWordByName={handleSelectWordByName}
               />
