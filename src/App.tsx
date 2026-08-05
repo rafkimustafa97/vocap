@@ -15,6 +15,8 @@ import {
   setActiveUserEmail,
   loadUserData,
   saveUserData,
+  fetchCloudUserData,
+  syncCloudUserData,
   getTitleRank
 } from './utils/userStore';
 import { supabase } from './utils/supabaseClient';
@@ -173,9 +175,48 @@ export default function App() {
     };
   }, []);
 
+  // Auto-fetch cloud user progress from Supabase database whenever activeEmail changes
+  useEffect(() => {
+    if (!activeEmail) return;
+
+    let isMounted = true;
+    fetchCloudUserData(activeEmail).then((cloudData) => {
+      if (!isMounted || !cloudData) return;
+
+      setUserData((prevLocal) => {
+        if (!prevLocal) return cloudData;
+
+        const localXp = prevLocal.xp || 0;
+        const cloudXp = cloudData.xp || 0;
+        const localMasteredCount = Object.values(prevLocal.userStats || {}).filter((s) => s.status === 'mastered').length;
+        const cloudMasteredCount = Object.values(cloudData.userStats || {}).filter((s) => s.status === 'mastered').length;
+
+        // If cloud data has equal or higher progress, adopt cloud data!
+        if (cloudXp >= localXp || cloudMasteredCount >= localMasteredCount) {
+          return {
+            ...cloudData,
+            profile: {
+              ...cloudData.profile,
+              name: prevLocal.profile.name || cloudData.profile.name
+            }
+          };
+        }
+
+        // If local data has unsynced local changes, sync local data up to cloud!
+        syncCloudUserData(activeEmail, prevLocal);
+        return prevLocal;
+      });
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeEmail]);
+
+  // Sync to Cloud Supabase database on every local userData mutation
   useEffect(() => {
     if (activeEmail && userData) {
-      saveUserData(activeEmail, userData);
+      syncCloudUserData(activeEmail, userData);
     }
   }, [activeEmail, userData]);
 

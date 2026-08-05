@@ -262,6 +262,60 @@ export function saveUserData(email: string, state: UserDataState): void {
   localStorage.setItem(key, JSON.stringify(state));
 }
 
+import { supabase } from './supabaseClient';
+
+export async function fetchCloudUserData(email: string): Promise<UserDataState | null> {
+  const cleanEmail = email.toLowerCase().trim();
+  if (!cleanEmail) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('user_data')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Notice fetching cloud user progress:', error.message);
+    }
+
+    if (data && data.user_data) {
+      const cloudState = data.user_data as UserDataState;
+      saveUserData(cleanEmail, cloudState);
+      return cloudState;
+    }
+  } catch (err) {
+    console.error('Error fetching cloud user data:', err);
+  }
+  return null;
+}
+
+export async function syncCloudUserData(email: string, state: UserDataState): Promise<void> {
+  const cleanEmail = email.toLowerCase().trim();
+  if (!cleanEmail || !state) return;
+
+  saveUserData(cleanEmail, state);
+
+  try {
+    const { error } = await supabase
+      .from('user_progress')
+      .upsert(
+        {
+          email: cleanEmail,
+          user_data: state,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'email' }
+      );
+
+    if (error) {
+      console.error('Error syncing cloud user progress to Supabase:', error.message);
+    }
+  } catch (err) {
+    console.error('Failed to sync user data to Supabase:', err);
+  }
+}
+
 export function getTitleRank(xp: number): TitleRank {
   const rank = TITLE_RANKS.find((r) => xp >= r.minXp && xp <= r.maxXp);
   return rank || TITLE_RANKS[TITLE_RANKS.length - 1];
