@@ -146,6 +146,8 @@ function getVerbForms(targetWord: string, wordObj?: Word): WordInflections {
   let v3 = v + 'ed';
   let vIng = v + 'ing';
 
+  const noDoubleConsonants = ['visit', 'listen', 'happen', 'open', 'offer', 'enter', 'answer', 'differ', 'suffer'];
+
   if (v.endsWith('e')) {
     v2 = v + 'd';
     v3 = v + 'd';
@@ -153,6 +155,10 @@ function getVerbForms(targetWord: string, wordObj?: Word): WordInflections {
   } else if (v.endsWith('y') && !/[aeiou]y$/.test(v)) {
     v2 = v.slice(0, -1) + 'ied';
     v3 = v.slice(0, -1) + 'ied';
+  } else if (noDoubleConsonants.includes(v)) {
+    v2 = v + 'ed';
+    v3 = v + 'ed';
+    vIng = v + 'ing';
   } else if (/[bcdfghjklmnpqrstvwxz][aeiou][bcdfghjklmnprstvz]$/.test(v) && v.length <= 6) {
     const lastChar = v.slice(-1);
     v2 = v + lastChar + 'ed';

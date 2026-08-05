@@ -70,37 +70,48 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
         <div className="bg-slate-900 text-slate-200 px-5 py-3 border-b border-slate-800 shrink-0 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
             
-            {/* V1, V2, V3, V-ing display bar */}
-            <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
-              <span className="text-slate-400 uppercase font-bold">
-                {isMainVerb ? 'Verb Inflections:' : `Verb Inflections (Contextual Verb: ${matrixData.usedVerb}):`}
-              </span>
-              <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
-                V1: {matrixData.inflections.v1}
-              </span>
-              <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
-                V1(+s): {matrixData.inflections.v1Singular}
-              </span>
-              <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
-                V2: {matrixData.inflections.v2}
-              </span>
-              <span className="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
-                V3: {matrixData.inflections.v3}
-              </span>
-              <span className="bg-slate-800 text-purple-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
-                V-ing: {matrixData.inflections.vIng}
-              </span>
-            </div>
+            {/* Render Verb Inflections bar ONLY for Verbs; render Target Word Class & Context for Non-Verbs */}
+            {isMainVerb ? (
+              <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
+                <span className="text-slate-400 uppercase font-bold">Verb Inflections:</span>
+                <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                  V1: {matrixData.inflections.v1}
+                </span>
+                <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                  V1(+s): {matrixData.inflections.v1Singular}
+                </span>
+                <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                  V2: {matrixData.inflections.v2}
+                </span>
+                <span className="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                  V3: {matrixData.inflections.v3}
+                </span>
+                <span className="bg-slate-800 text-purple-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                  V-ing: {matrixData.inflections.vIng}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
+                <span className="text-slate-400 uppercase font-bold">Target Word Class:</span>
+                <span className="bg-slate-800 text-amber-300 px-2.5 py-0.5 rounded border border-slate-700 font-extrabold uppercase">
+                  {word.pos} ({word.meaning_id})
+                </span>
+                <span className="text-slate-400 font-bold">| Usage Context:</span>
+                <span className="bg-slate-800 text-emerald-300 px-2.5 py-0.5 rounded border border-slate-700 font-bold">
+                  {word.pos.toLowerCase().includes('noun') ? 'Subjek / Objek Kalimat' : `Nominal Sentence (To Be + ${word.pos})`}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                matrixData.transitivity === 'Transitive'
-                  ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700'
-                  : matrixData.transitivity === 'Nominal'
+                !isMainVerb
                   ? 'bg-purple-900/60 text-purple-300 border-purple-700'
+                  : matrixData.transitivity === 'Transitive'
+                  ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700'
                   : 'bg-amber-900/60 text-amber-300 border-amber-700'
               }`}>
-                {matrixData.transitivity} {matrixData.transitivity === 'Nominal' ? 'Structure' : 'Verb'}
+                {!isMainVerb ? `${word.pos.toUpperCase()} Structure` : `${matrixData.transitivity} Verb`}
               </span>
 
               {/* COLLAPSE / EXPAND TOGGLE BUTTON */}
