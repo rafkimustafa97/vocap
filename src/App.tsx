@@ -36,6 +36,34 @@ import { WordDetailModal } from './components/WordDetailModal';
 import { SqlSchemaModal } from './components/SqlSchemaModal';
 import { SettingsModal } from './components/SettingsModal';
 
+// Robust, fail-safe JWT decoder for OAuth Hash Tokens
+const decodeJwt = (token: string): any => {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    let base64Url = parts[1];
+    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) {
+      base64 += '=';
+    }
+    const rawBinary = atob(base64);
+    try {
+      const jsonPayload = decodeURIComponent(
+        rawBinary
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return JSON.parse(rawBinary);
+    }
+  } catch (err) {
+    console.error('Failed to parse JWT payload:', err);
+    return null;
+  }
+};
+
 // Synchronous OAuth Token Extraction from Hash Fragment on initial page load
 const getInitialOAuthUser = (): { email: string; name?: string } | null => {
   if (typeof window === 'undefined') return null;
@@ -45,15 +73,7 @@ const getInitialOAuthUser = (): { email: string; name?: string } | null => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       if (accessToken) {
-        const base64Url = accessToken.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-        const payload = JSON.parse(jsonPayload);
+        const payload = decodeJwt(accessToken);
         if (payload?.email) {
           const email = payload.email.toLowerCase().trim();
           const name = payload.user_metadata?.full_name || payload.user_metadata?.name || email.split('@')[0];
