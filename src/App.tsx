@@ -36,19 +36,63 @@ import { WordDetailModal } from './components/WordDetailModal';
 import { SqlSchemaModal } from './components/SqlSchemaModal';
 import { SettingsModal } from './components/SettingsModal';
 
+// Synchronous OAuth Token Extraction from Hash Fragment on initial page load
+const getInitialOAuthUser = (): { email: string; name?: string } | null => {
+  if (typeof window === 'undefined') return null;
+
+  if (window.location.hash && window.location.hash.includes('access_token')) {
+    try {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      if (accessToken) {
+        const base64Url = accessToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+        if (payload?.email) {
+          const email = payload.email.toLowerCase().trim();
+          const name = payload.user_metadata?.full_name || payload.user_metadata?.name || email.split('@')[0];
+          setActiveUserEmail(email);
+          
+          // Instantly clean address bar hash before initial render!
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          return { email, name };
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing synchronous OAuth hash:', e);
+    }
+  }
+  return null;
+};
+
 export default function App() {
   const allWords = useMemo<Word[]>(() => {
     return getWordsRange(1, 3655);
   }, []);
 
-  const [activeEmail, setActiveEmail] = useState<string | null>(() => getActiveUserEmail());
-  
+  // Synchronously extract user email & name if returning from Google OAuth redirect
+  const initialOAuthUser = getInitialOAuthUser();
+  const initialEmail = initialOAuthUser ? initialOAuthUser.email : getActiveUserEmail();
+
+  const [activeEmail, setActiveEmail] = useState<string | null>(initialEmail);
+
   const [userData, setUserData] = useState<UserDataState | null>(() => {
-    const email = getActiveUserEmail();
-    return email ? loadUserData(email) : null;
+    if (!initialEmail) return null;
+    const loaded = loadUserData(initialEmail);
+    if (initialOAuthUser?.name && loaded.profile.name !== initialOAuthUser.name) {
+      loaded.profile.name = initialOAuthUser.name;
+      saveUserData(initialEmail, loaded);
+    }
+    return loaded;
   });
 
-  const [activeView, setActiveView] = useState<string>(() => (getActiveUserEmail() ? 'dashboard' : 'landing'));
+  const [activeView, setActiveView] = useState<string>(() => (initialEmail ? 'dashboard' : 'landing'));
 
   // Active Review Fullscreen Lock State
   const [isReviewActive, setIsReviewActive] = useState<boolean>(false);
@@ -84,7 +128,6 @@ export default function App() {
     setUserData(loaded);
     setActiveView('dashboard');
 
-    // Clean hash from address bar (e.g. remove #access_token=...)
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
@@ -92,14 +135,12 @@ export default function App() {
 
   // Auto-listen & process Supabase OAuth Session redirects (Google 1-Click Login)
   useEffect(() => {
-    // 1. Initial Session Check (processes hash fragment if redirected from OAuth)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         processSessionUser(session.user);
       }
     });
 
-    // 2. Realtime Auth State Change Listener
     const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         processSessionUser(session.user);
