@@ -17,6 +17,7 @@ import {
   saveUserData,
   getTitleRank
 } from './utils/userStore';
+import { supabase } from './utils/supabaseClient';
 
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
@@ -66,6 +67,21 @@ export default function App() {
   const [isSqlModalOpen, setIsSqlModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
+  // Auto-listen to Supabase OAuth Session redirects (Google 1-Click Login)
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.email) {
+        const email = session.user.email;
+        const name = session.user.user_metadata?.full_name || email.split('@')[0];
+        handleAuthSuccess(email, name);
+      }
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     if (activeEmail && userData) {
       saveUserData(activeEmail, userData);
@@ -99,6 +115,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    supabase.auth.signOut();
     setActiveUserEmail(null);
     setActiveEmail(null);
     setUserData(null);
