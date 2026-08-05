@@ -66,32 +66,31 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
           </button>
         </div>
 
-        {/* Verb Inflection & Compact Header Bar */}
+        {/* Verb Inflection Bar (V1, V1+s, V2, V3, V-ing) FOR ALL WORDS */}
         <div className="bg-slate-900 text-slate-200 px-5 py-3 border-b border-slate-800 shrink-0 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
             
-            {/* Conditional POS / Verb Inflections Header */}
-            {!isMainVerb ? (
-              <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
-                <span className="text-slate-400 uppercase font-bold">Word Class:</span>
-                <span className="bg-slate-800 text-amber-300 px-2.5 py-0.5 rounded border border-slate-700 font-bold uppercase">
-                  {word.pos}
-                </span>
-                <span className="text-slate-400 font-bold">| Context Pattern:</span>
-                <span className="bg-slate-800 text-emerald-300 px-2.5 py-0.5 rounded border border-slate-700 font-bold">
-                  Nominal (To Be + {word.pos})
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
-                <span className="text-slate-400 uppercase font-bold">Verb Inflections:</span>
-                <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V1: {matrixData.inflections.v1}</span>
-                <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V1(+s): {matrixData.inflections.v1Singular}</span>
-                <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V2: {matrixData.inflections.v2}</span>
-                <span className="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V3: {matrixData.inflections.v3}</span>
-                <span className="bg-slate-800 text-purple-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V-ing: {matrixData.inflections.vIng}</span>
-              </div>
-            )}
+            {/* V1, V2, V3, V-ing display bar */}
+            <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
+              <span className="text-slate-400 uppercase font-bold">
+                {isMainVerb ? 'Verb Inflections:' : `Verb Inflections (Contextual Verb: ${matrixData.usedVerb}):`}
+              </span>
+              <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                V1: {matrixData.inflections.v1}
+              </span>
+              <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                V1(+s): {matrixData.inflections.v1Singular}
+              </span>
+              <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                V2: {matrixData.inflections.v2}
+              </span>
+              <span className="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                V3: {matrixData.inflections.v3}
+              </span>
+              <span className="bg-slate-800 text-purple-300 px-2 py-0.5 rounded border border-slate-700 font-bold">
+                V-ing: {matrixData.inflections.vIng}
+              </span>
+            </div>
 
             <div className="flex items-center gap-2">
               <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
