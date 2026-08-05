@@ -50,7 +50,7 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ activityLogs, to
               Complete User Traceability
             </span>
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 mt-1 flex items-center gap-2">
-              📋 Riwayat Activity & Audit Trail
+              📋 Riwayat Aktivitas
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-1">
               Catatan rekam jejak aktivitas belajar, sesi kuis, vocabulary review, dan pencapaian tanpa celah.
@@ -82,161 +82,176 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ activityLogs, to
           </div>
 
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-black">Total Jejak Log:</span>
-            <p className="text-xl font-black text-purple-600">{activityLogs.length} <span className="text-xs font-medium text-slate-500">entry</span></p>
+            <span className="text-[10px] text-slate-400 uppercase font-black">Total Activity Logs:</span>
+            <p className="text-xl font-black text-purple-600">{activityLogs.length} <span className="text-xs font-medium text-slate-500">entri</span></p>
           </div>
         </div>
 
-        {/* Filter & Search Bar */}
+        {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari log riwayat berdasarkan kata kunci..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Cari kata kunci riwayat aktivitas..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
             />
           </div>
 
-          <select
-            value={filterCategory}
-            onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(1); }}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Semua Kategori Log</option>
-            <option value="quiz">Sesi Kuis Saja</option>
-            <option value="vocab_review">Sesi Vocab Review Saja</option>
-            <option value="badge_unlock">Pencapaian Badges</option>
-            <option value="rank_up">Kenaikan Level Title</option>
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-700 focus:outline-none"
+            >
+              <option value="all">Kategori: Semua</option>
+              <option value="quiz">🎯 Kuis Adaptive</option>
+              <option value="vocab_review">🔄 Vocab Review</option>
+              <option value="review_exit">🚪 Pembatalan Review</option>
+              <option value="rank_up">🏆 Kenaikan Rank</option>
+            </select>
+          </div>
         </div>
+      </div>
 
-        {/* Activity Logs Stream List */}
+      {/* Activity Logs Stream */}
+      <div className="space-y-3">
         {currentLogs.length === 0 ? (
-          <div className="bg-slate-50 rounded-2xl p-8 text-center text-xs text-slate-500 font-medium border border-slate-200">
-            📋 Belum ada riwayat aktivitas yang tercatat. Selesaikan kuis atau Vocabulary Review pertama Anda!
+          <div className="bg-white rounded-3xl p-8 text-center border border-slate-200 text-slate-500 text-xs">
+            Tidak ada riwayat aktivitas yang cocok dengan pencarian Anda.
           </div>
         ) : (
-          <div className="space-y-3">
-            {currentLogs.map((log) => {
-              const isExpanded = expandedLogId === log.id;
+          currentLogs.map((log) => {
+            const isExpanded = expandedLogId === log.id;
+            let icon = '📝';
+            let catColor = 'bg-slate-100 text-slate-700 border-slate-200';
 
-              let catIcon = '🎯';
-              let badgeBg = 'bg-blue-100 text-blue-800 border-blue-200';
-              if (log.category === 'vocab_review') {
-                catIcon = '🔄';
-                badgeBg = 'bg-orange-100 text-orange-800 border-orange-200';
-              } else if (log.category === 'badge_unlock') {
-                catIcon = '🏆';
-                badgeBg = 'bg-purple-100 text-purple-800 border-purple-200';
-              } else if (log.category === 'rank_up') {
-                catIcon = '👑';
-                badgeBg = 'bg-amber-100 text-amber-900 border-amber-300';
-              }
+            if (log.category === 'quiz') {
+              icon = '🎯';
+              catColor = 'bg-blue-50 text-blue-700 border-blue-200';
+            } else if (log.category === 'vocab_review') {
+              icon = '🔄';
+              catColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            } else if (log.category === 'review_exit') {
+              icon = '🚪';
+              catColor = 'bg-rose-50 text-rose-700 border-rose-200';
+            } else if (log.category === 'rank_up') {
+              icon = '🏆';
+              catColor = 'bg-amber-50 text-amber-700 border-amber-200';
+            }
 
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-2 transition-all hover:border-slate-300"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl p-2 bg-slate-50 rounded-xl border border-slate-200 shrink-0">{catIcon}</span>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-extrabold text-slate-900 text-xs md:text-sm">{log.title}</h4>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeBg}`}>
-                            {log.category.toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">{log.description}</p>
+            return (
+              <div
+                key={log.id}
+                className="bg-white rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-2xs space-y-2.5 transition-all hover:border-purple-200"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl p-2 bg-slate-50 rounded-2xl border border-slate-100 shrink-0">
+                      {icon}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border uppercase ${catColor}`}>
+                          {log.category.replace('_', ' ')}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {log.formattedDate}
+                        </span>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                      <div className="text-right">
-                        <span className="text-xs font-black text-blue-600 block">+{log.xpEarned} XP</span>
-                        <span className="text-[10px] text-slate-400 font-mono block">{log.formattedDate}</span>
-                      </div>
-
-                      {log.details && (log.details.wrongWords || log.details.mode) && (
-                        <button
-                          type="button"
-                          onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-                          className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all text-xs flex items-center gap-1 font-bold"
-                        >
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
-                      )}
+                      <h4 className="font-extrabold text-slate-900 text-sm md:text-base mt-1">
+                        {log.title}
+                      </h4>
                     </div>
                   </div>
 
-                  {/* EXPANDABLE LOG DETAILS */}
-                  {isExpanded && log.details && (
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs animate-in fade-in duration-150 mt-2">
-                      <div className="flex flex-wrap gap-4 text-slate-700">
-                        {log.details.totalCount !== undefined && (
-                          <span>Total Soal: <strong>{log.details.totalCount}</strong></span>
-                        )}
-                        {log.details.correctCount !== undefined && (
-                          <span>Benar: <strong className="text-emerald-600">{log.details.correctCount}</strong></span>
-                        )}
-                        {log.scorePct !== undefined && (
-                          <span>Akurasi: <strong className="text-blue-600">{log.scorePct}%</strong></span>
+                  {log.xpEarned !== undefined && log.xpEarned !== 0 && (
+                    <span
+                      className={`text-xs font-black px-3 py-1 rounded-full shrink-0 ${
+                        log.xpEarned > 0
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-rose-100 text-rose-700'
+                      }`}
+                    >
+                      {log.xpEarned > 0 ? `+${log.xpEarned} XP` : `${log.xpEarned} XP`}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-600 font-medium leading-relaxed pl-1">
+                  {log.description}
+                </p>
+
+                {/* Optional Expandable Details */}
+                {log.details && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
+                      className="text-xs font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1"
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {isExpanded ? 'Sembunyikan Rincian Kata' : 'Lihat Rincian Kata'}
+                    </button>
+
+                    {isExpanded && (
+                      <div className="mt-2 p-3 bg-purple-50/50 rounded-xl border border-purple-100 space-y-1.5 text-xs text-slate-700">
+                        {log.details.wrongWords && log.details.wrongWords.length > 0 ? (
+                          <div>
+                            <span className="font-bold text-rose-700 block">Kata yang perlu dievaluasi ({log.details.wrongWords.length}):</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {log.details.wrongWords.map((w, idx) => (
+                                <span key={idx} className="bg-white text-rose-800 px-2 py-0.5 rounded-lg border border-rose-200 text-[11px] font-bold">
+                                  {w}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-emerald-700 font-bold">✅ Sempurna! Seluruh kata dijawab dengan benar.</span>
                         )}
                       </div>
-
-                      {log.details.wrongWords && log.details.wrongWords.length > 0 && (
-                        <div className="space-y-1 pt-1 border-t border-slate-200">
-                          <span className="text-[11px] font-bold text-rose-700 block">Kata Terlewat / Salah ({log.details.wrongWords.length}):</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {log.details.wrongWords.map((w, idx) => (
-                              <span key={idx} className="bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                                {w}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                </div>
-              );
-            })}
-          </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
-            <button
-              type="button"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 font-bold rounded-xl transition-all"
-            >
-              ← Sebelumnya
-            </button>
-
-            <span className="font-bold text-slate-600">
-              Halaman {currentPage} dari {totalPages}
-            </span>
-
-            <button
-              type="button"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 font-bold rounded-xl transition-all"
-            >
-              Selanjutnya →
-            </button>
-          </div>
-        )}
-
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white rounded-2xl p-3 border border-slate-200 text-xs font-bold text-slate-600">
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40 transition-all"
+          >
+            Sebelumnya
+          </button>
+
+          <span>Halaman {currentPage} dari {totalPages}</span>
+
+          <button
+            type="button"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40 transition-all"
+          >
+            Berikutnya
+          </button>
+        </div>
+      )}
 
     </div>
   );

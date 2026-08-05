@@ -1,18 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Word, WordUserStat } from '../types';
-import { getWordsRange } from '../data/wordsMaster';
 import { speakText } from '../utils/speech';
 import {
   Search,
-  Filter,
+  BookOpen,
   Volume2,
   Sparkles,
-  BookOpen,
+  CheckCircle2,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Tag,
-  CheckCircle2,
-  AlertTriangle
+  Filter
 } from 'lucide-react';
 
 interface LibraryViewProps {
@@ -33,110 +31,76 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [page, setPage] = useState<number>(1);
-  const pageSize = 20;
+  const itemsPerPage = 20;
 
-  // Filtered dataset
   const filteredWords = useMemo(() => {
-    return allWords.filter((word) => {
-      // Search
-      const searchLower = searchTerm.trim().toLowerCase();
+    return allWords.filter((w) => {
       const matchesSearch =
-        searchLower === '' ||
-        word.word.toLowerCase().includes(searchLower) ||
-        word.meaning_id.toLowerCase().includes(searchLower) ||
-        word.ipa.toLowerCase().includes(searchLower) ||
-        word.ipa_perkiraan.toLowerCase().includes(searchLower) ||
-        word.no.toString() === searchLower;
+        w.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.meaning_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.no.toString() === searchTerm.trim();
 
-      // POS
-      let matchesPos = selectedPos === 'all';
-      if (!matchesPos) {
-        const pLower = word.pos.toLowerCase();
-        if (selectedPos === 'verb') {
-          matchesPos = pLower.includes('verb') || pLower.includes('v.') || pLower.includes('v/');
-        } else if (selectedPos === 'noun') {
-          matchesPos = pLower.includes('noun') || pLower.includes('n.') || pLower.includes('/n');
-        } else if (selectedPos === 'adjective') {
-          matchesPos = pLower.includes('adj');
-        } else if (selectedPos === 'adverb') {
-          matchesPos = pLower.includes('adv');
-        } else if (selectedPos === 'phrasal') {
-          matchesPos = pLower.includes('phrasal');
-        } else if (selectedPos === 'idiom') {
-          matchesPos = pLower.includes('idiom');
-        } else {
-          matchesPos = pLower.includes(selectedPos.toLowerCase());
-        }
-      }
+      const matchesPos =
+        selectedPos === 'all'
+          ? true
+          : w.pos.toLowerCase().includes(selectedPos.toLowerCase());
 
-      // Source
-      let matchesSource = selectedSource === 'all';
-      if (!matchesSource) {
-        const sLower = word.source.toLowerCase();
-        if (selectedSource === 'AWL') {
-          matchesSource = sLower.includes('awl');
-        } else if (selectedSource === 'NGSL') {
-          matchesSource = sLower.includes('ngsl');
-        } else if (selectedSource === 'Vocabulary') {
-          matchesSource = sLower.includes('vocab') && !sLower.includes('awl') && !sLower.includes('ngsl');
-        } else if (selectedSource === 'Appendix') {
-          matchesSource = sLower.includes('appendix');
-        } else {
-          matchesSource = sLower === selectedSource.toLowerCase();
-        }
-      }
+      const matchesSource =
+        selectedSource === 'all'
+          ? true
+          : (w.source || '').toUpperCase().includes(selectedSource.toUpperCase());
 
-      // Mastery status
-      const stat = userStats[word.id];
-      const status = stat ? stat.status : 'new';
-      const isWeakness = stat ? stat.isWeakness : false;
-
+      const stat = userStats[w.id];
       let matchesStatus = true;
-      if (selectedStatus === 'mastered') matchesStatus = status === 'mastered';
-      if (selectedStatus === 'learning') matchesStatus = status === 'learning';
-      if (selectedStatus === 'new') matchesStatus = status === 'new';
-      if (selectedStatus === 'weakness') matchesStatus = isWeakness;
+      if (selectedStatus === 'mastered') {
+        matchesStatus = stat?.status === 'mastered';
+      } else if (selectedStatus === 'learning') {
+        matchesStatus = stat?.status === 'learning';
+      } else if (selectedStatus === 'new') {
+        matchesStatus = !stat || stat.status === 'new';
+      } else if (selectedStatus === 'weakness') {
+        matchesStatus = !!stat?.isWeakness;
+      }
 
       return matchesSearch && matchesPos && matchesSource && matchesStatus;
     });
   }, [allWords, userStats, searchTerm, selectedPos, selectedSource, selectedStatus]);
 
-  const totalPages = Math.ceil(filteredWords.length / pageSize) || 1;
-  const currentPageWords = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredWords.slice(start, start + pageSize);
-  }, [filteredWords, page, pageSize]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPage(1);
-  };
+  const totalPages = Math.max(1, Math.ceil(filteredWords.length / itemsPerPage));
+  const currentPageWords = filteredWords.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto px-2 pb-24">
-      {/* Search & Filter Header */}
-      <div className="bg-white rounded-3xl p-4 md:p-5 border border-slate-200 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
+    <div className="space-y-4 max-w-4xl mx-auto px-2 sm:px-4 pb-20">
+      
+      {/* Header Info */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-600" /> Kamus Master (3.655 Kata)
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-0.5 rounded-full">
+              Kamus Akademis Lengkap
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 tracking-tight">
+              3.655 Master Vocabulary PTE
             </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Cari kata, IPA, arti Bahasa Indonesia, atau nomor kata.
-            </p>
           </div>
-          <span className="text-xs font-black bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
-            {filteredWords.length} Hasil
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full self-start sm:self-auto">
+            Menampilkan {filteredWords.length} kata
           </span>
         </div>
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1);
+            }}
             placeholder="Cari kata (contoh: implement, 150, mader)..."
             className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs md:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
@@ -197,7 +161,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs hover:border-blue-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3"
             >
               <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-bold text-slate-400 font-mono">#{word.no}</span>
                   <h3 className="text-base font-black text-slate-900">{word.word}</h3>
                   <button
@@ -236,8 +200,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 )}
               </div>
 
-              {/* Action Icons */}
-              <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-slate-100">
+              {/* Action Buttons: Moved to the right side on mobile to fill red box area */}
+              <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-2.5 md:pt-0 border-slate-100 justify-end">
                 <button
                   type="button"
                   onClick={() => onOpenTenses(word)}
@@ -258,20 +222,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             </div>
           );
         })}
+
+        {filteredWords.length === 0 && (
+          <div className="bg-white rounded-3xl p-8 text-center border border-slate-200">
+            <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <h4 className="font-bold text-slate-700 text-sm">Tidak ada kata ditemukan</h4>
+            <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau filter Anda.</p>
+          </div>
+        )}
       </div>
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between text-xs font-bold text-slate-700">
+        <div className="flex items-center justify-between bg-white rounded-2xl p-3 border border-slate-200 text-xs font-bold text-slate-600">
           <button
             type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1 ${
-              page === 1 ? 'text-slate-300 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-            }`}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40 transition-all"
           >
-            <ChevronLeft className="w-4 h-4" /> Prev
+            <ChevronLeft className="w-4 h-4" /> Sebelum
           </button>
 
           <span>
@@ -280,16 +250,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
           <button
             type="button"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1 ${
-              page === totalPages ? 'text-slate-300 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-            }`}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40 transition-all"
           >
-            Next <ChevronRight className="w-4 h-4" />
+            Berikut <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}
+
     </div>
   );
 };
