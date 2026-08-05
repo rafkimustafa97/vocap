@@ -80,7 +80,7 @@ const getInitialOAuthUser = (): { email: string; name?: string } | null => {
           setActiveUserEmail(email);
           
           // Instantly clean address bar hash before initial render!
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          window.history.replaceState(null, '', window.location.pathname);
           return { email, name };
         }
       }
@@ -148,8 +148,9 @@ export default function App() {
     setUserData(loaded);
     setActiveView('dashboard');
 
-    if (window.location.hash) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    // Clean address bar URL (remove ?code=... or #access_token=...)
+    if (window.location.search || window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname);
     }
   };
 
