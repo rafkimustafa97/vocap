@@ -346,7 +346,7 @@ interface NaturalContext {
 function getNaturalContext(wordObj: Word): NaturalContext {
   const rawPos = (wordObj.pos || '').toLowerCase();
   const wordLower = wordObj.word.toLowerCase().trim();
-  const primaryMeaning = cleanPrimaryMeaning(wordObj.meaning_id);
+  const primaryMeaning = cleanPrimaryMeaning(wordObj.meaning_id, wordLower);
   const isMainVerb = rawPos.includes('verb') || rawPos.includes('v.');
 
   // 1. MAIN VERBS
@@ -361,7 +361,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'to the university campus',
         subjectID: 'Siswa tersebut',
         objectID: 'ke kampus universitas',
-        meaningVerbID: primaryMeaning || 'berlari',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Intransitive',
         isDerivedVerb: false
       };
@@ -373,7 +373,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'a delicious gourmet dish',
         subjectID: 'Koki tersebut',
         objectID: 'hidangan lezat',
-        meaningVerbID: primaryMeaning || 'memasak',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -385,7 +385,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'the PTE academic vocabulary',
         subjectID: 'Kandidat tersebut',
         objectID: 'kosakata akademis PTE',
-        meaningVerbID: primaryMeaning || 'mempelajari',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -397,7 +397,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'the research manuscript',
         subjectID: 'Penulis akademis',
         objectID: 'naskah penelitian',
-        meaningVerbID: primaryMeaning || 'menulis',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -409,7 +409,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'undergraduate students',
         subjectID: 'Profesor tersebut',
         objectID: 'mahasiswa S1',
-        meaningVerbID: primaryMeaning || 'mengajar',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -421,7 +421,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'an innovative application',
         subjectID: 'Insinyur perangkat lunak',
         objectID: 'aplikasi inovatif',
-        meaningVerbID: primaryMeaning || 'mengembangkan',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -433,7 +433,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: 'the experimental dataset',
         subjectID: 'Ilmuwan data',
         objectID: 'set data eksperimen',
-        meaningVerbID: primaryMeaning || 'menganalisis',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -445,7 +445,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         object: '',
         subjectID: 'Fenomena alam',
         objectID: '',
-        meaningVerbID: primaryMeaning || 'terjadi',
+        meaningVerbID: primaryMeaning,
         transitivity: 'Intransitive',
         isDerivedVerb: false
       };
@@ -458,7 +458,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       object: isIntransitive ? '' : 'the academic assignment',
       subjectID: 'Cendekiawan tersebut',
       objectID: isIntransitive ? '' : 'tugas akademis',
-      meaningVerbID: primaryMeaning || 'melakukan',
+      meaningVerbID: primaryMeaning,
       transitivity,
       isDerivedVerb: false
     };
@@ -499,7 +499,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         subject: 'The manager',
         object: `the loyal ${wordLower}`,
         subjectID: 'Manajer tersebut',
-        objectID: `pelanggan setia (${primaryMeaning || wordLower})`,
+        objectID: `pelanggan setia (${primaryMeaning})`,
         meaningVerbID: 'melayani',
         transitivity: 'Transitive',
         isDerivedVerb: true,
@@ -512,7 +512,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       subject: 'My friend',
       object: `his ${wordLower}`,
       subjectID: 'Teman saya',
-      objectID: primaryMeaning || wordLower,
+      objectID: primaryMeaning,
       meaningVerbID: 'mengunjungi',
       transitivity: 'Transitive',
       isDerivedVerb: true,
@@ -528,7 +528,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         subject: 'The IT department',
         object: `the ${wordLower}`,
         subjectID: 'Departemen IT',
-        objectID: `sistem (${primaryMeaning || wordLower})`,
+        objectID: `sistem (${primaryMeaning})`,
         meaningVerbID: 'meningkatkan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
@@ -541,7 +541,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         subject: 'The committee',
         object: `the new ${wordLower}`,
         subjectID: 'Komite penilai',
-        objectID: `kebijakan baru (${primaryMeaning || wordLower})`,
+        objectID: `kebijakan baru (${primaryMeaning})`,
         meaningVerbID: 'menerapkan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
@@ -554,7 +554,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         subject: 'The university press',
         object: `the academic ${wordLower}`,
         subjectID: 'Penerbit universitas',
-        objectID: `buku akademis (${primaryMeaning || wordLower})`,
+        objectID: `buku akademis (${primaryMeaning})`,
         meaningVerbID: 'menerbitkan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
@@ -567,7 +567,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         subject: 'The candidate',
         object: `the fond ${wordLower}`,
         subjectID: 'Kandidat tersebut',
-        objectID: `kenangan (${primaryMeaning || wordLower})`,
+        objectID: `kenangan (${primaryMeaning})`,
         meaningVerbID: 'menghargai',
         transitivity: 'Transitive',
         isDerivedVerb: true,
@@ -581,7 +581,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       subject: 'The research team',
       object: `the ${wordLower} framework`,
       subjectID: 'Tim peneliti',
-      objectID: `kerangka ${primaryMeaning || wordLower}`,
+      objectID: `kerangka ${primaryMeaning}`,
       meaningVerbID: 'mengembangkan',
       transitivity: 'Transitive',
       isDerivedVerb: true,
@@ -598,7 +598,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         subject: 'The candidate',
         object: wordLower,
         subjectID: 'Kandidat tersebut',
-        objectID: primaryMeaning || wordLower,
+        objectID: primaryMeaning,
         meaningVerbID: 'merasa',
         transitivity: 'Nominal',
         isDerivedVerb: true,
@@ -610,7 +610,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       subject: 'The review panel',
       object: `the proposal ${wordLower}`,
       subjectID: 'Komite penilai',
-      objectID: `proposal tersebut (${primaryMeaning || wordLower})`,
+      objectID: `proposal tersebut (${primaryMeaning})`,
       meaningVerbID: 'menganggap',
       transitivity: 'Transitive',
       isDerivedVerb: true,
@@ -624,7 +624,7 @@ function getNaturalContext(wordObj: Word): NaturalContext {
     subject: 'The lecturer',
     object: `the concept ${wordLower}`,
     subjectID: 'Dosen tersebut',
-    objectID: `konsep (${primaryMeaning || wordLower})`,
+    objectID: `konsep (${primaryMeaning})`,
     meaningVerbID: 'menjelaskan',
     transitivity: 'Transitive',
     isDerivedVerb: true,
@@ -689,11 +689,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + does/do + not + V1 + O',
-          sentence: `${S} does not ${v1} ${O} every day.`.trim()
+          sentence: `${S} does not ${v1} ${O} every day.`.trim(),
+          meaning: `${S_ID} tidak ${meaningVerbID} ${O_ID} setiap hari.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Does/Do + S + V1 + O?',
-          sentence: `Does ${sLower} ${v1} ${O} every day?`.trim()
+          sentence: `Does ${sLower} ${v1} ${O} every day?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} ${meaningVerbID} ${O_ID} setiap hari?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -706,11 +708,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + am/is/are + not + V3',
-          sentence: `${O_Cap} is not ${v3} by ${sLower} every day.`.trim()
+          sentence: `${O_Cap} is not ${v3} by ${sLower} every day.`.trim(),
+          meaning: `${O_Cap} tidak di-${v3} oleh ${sLower} setiap hari.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Am/Is/Are + S + V3?',
-          sentence: `Is ${oLower} ${v3} by ${sLower} every day?`.trim()
+          sentence: `Is ${oLower} ${v3} by ${sLower} every day?`.trim(),
+          meaning: `Apakah ${oLower} di-${v3} oleh ${sLower} setiap hari?`
         } : undefined
       }
     },
@@ -736,11 +740,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + am/is/are + not + V-ing + O',
-          sentence: `${S} is not ${vIng} ${O} right now.`.trim()
+          sentence: `${S} is not ${vIng} ${O} right now.`.trim(),
+          meaning: `${S_ID} tidak sedang ${meaningVerbID} ${O_ID} saat ini.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Am/Is/Are + S + V-ing + O?',
-          sentence: `Is ${sLower} ${vIng} ${O} right now?`.trim()
+          sentence: `Is ${sLower} ${vIng} ${O} right now?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} sedang ${meaningVerbID} ${O_ID} saat ini?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -753,11 +759,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + am/is/are + not + being + V3',
-          sentence: `${O_Cap} is not being ${v3} by ${sLower} right now.`.trim()
+          sentence: `${O_Cap} is not being ${v3} by ${sLower} right now.`.trim(),
+          meaning: `${O_Cap} tidak sedang di-${v3} oleh ${sLower} saat ini.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Am/Is/Are + S + being + V3?',
-          sentence: `Is ${oLower} being ${v3} by ${sLower} right now?`.trim()
+          sentence: `Is ${oLower} being ${v3} by ${sLower} right now?`.trim(),
+          meaning: `Apakah ${oLower} sedang di-${v3} oleh ${sLower} saat ini?`
         } : undefined
       }
     },
@@ -783,11 +791,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + has/have + not + V3 + O',
-          sentence: `${S} has not ${v3} ${O} recently.`.trim()
+          sentence: `${S} has not ${v3} ${O} recently.`.trim(),
+          meaning: `${S_ID} belum ${meaningVerbID} ${O_ID} baru-baru ini.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Has/Have + S + V3 + O?',
-          sentence: `Has ${sLower} ${v3} ${O} recently?`.trim()
+          sentence: `Has ${sLower} ${v3} ${O} recently?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} telah ${meaningVerbID} ${O_ID} baru-baru ini?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -800,11 +810,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + has/have + not + been + V3',
-          sentence: `${O_Cap} has not been ${v3} by ${sLower} recently.`.trim()
+          sentence: `${O_Cap} has not been ${v3} by ${sLower} recently.`.trim(),
+          meaning: `${O_Cap} belum di-${v3} oleh ${sLower} baru-baru ini.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Has/Have + S + been + V3?',
-          sentence: `Has ${oLower} been ${v3} by ${sLower} recently?`.trim()
+          sentence: `Has ${oLower} been ${v3} by ${sLower} recently?`.trim(),
+          meaning: `Apakah ${oLower} telah di-${v3} oleh ${sLower} baru-baru ini?`
         } : undefined
       }
     },
@@ -830,11 +842,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + did + not + V1 + O',
-          sentence: `${S} did not ${v1} ${O} yesterday.`.trim()
+          sentence: `${S} did not ${v1} ${O} yesterday.`.trim(),
+          meaning: `${S_ID} tidak ${meaningVerbID} ${O_ID} kemarin.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Did + S + V1 + O?',
-          sentence: `Did ${sLower} ${v1} ${O} yesterday?`.trim()
+          sentence: `Did ${sLower} ${v1} ${O} yesterday?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} ${meaningVerbID} ${O_ID} kemarin?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -847,11 +861,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + was/were + not + V3',
-          sentence: `${O_Cap} was not ${v3} by ${sLower} yesterday.`.trim()
+          sentence: `${O_Cap} was not ${v3} by ${sLower} yesterday.`.trim(),
+          meaning: `${O_Cap} tidak di-${v3} oleh ${sLower} kemarin.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Was/Were + S + V3?',
-          sentence: `Was ${oLower} ${v3} by ${sLower} yesterday?`.trim()
+          sentence: `Was ${oLower} ${v3} by ${sLower} yesterday?`.trim(),
+          meaning: `Apakah ${oLower} di-${v3} oleh ${sLower} kemarin?`
         } : undefined
       }
     },
@@ -877,11 +893,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + will + not + V1 + O',
-          sentence: `${S} will not ${v1} ${O} tomorrow.`.trim()
+          sentence: `${S} will not ${v1} ${O} tomorrow.`.trim(),
+          meaning: `${S_ID} tidak akan ${meaningVerbID} ${O_ID} besok.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Will + S + V1 + O?',
-          sentence: `Will ${sLower} ${v1} ${O} tomorrow?`.trim()
+          sentence: `Will ${sLower} ${v1} ${O} tomorrow?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} akan ${meaningVerbID} ${O_ID} besok?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -894,11 +912,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + will not be + V3',
-          sentence: `${O_Cap} will not be ${v3} by ${sLower} tomorrow.`.trim()
+          sentence: `${O_Cap} will not be ${v3} by ${sLower} tomorrow.`.trim(),
+          meaning: `${O_Cap} tidak akan di-${v3} oleh ${sLower} besok.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Will + S + be + V3?',
-          sentence: `Will ${oLower} be ${v3} by ${sLower} tomorrow?`.trim()
+          sentence: `Will ${oLower} be ${v3} by ${sLower} tomorrow?`.trim(),
+          meaning: `Apakah ${oLower} akan di-${v3} oleh ${sLower} besok?`
         } : undefined
       }
     },
@@ -924,11 +944,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + was/were + not + V-ing + O',
-          sentence: `${S} was not ${vIng} ${O} at 8 PM last night.`.trim()
+          sentence: `${S} was not ${vIng} ${O} at 8 PM last night.`.trim(),
+          meaning: `${S_ID} tidak sedang ${meaningVerbID} ${O_ID} pada jam 8 malam kemarin.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Was/Were + S + V-ing + O?',
-          sentence: `Was ${sLower} ${vIng} ${O} at 8 PM last night?`.trim()
+          sentence: `Was ${sLower} ${vIng} ${O} at 8 PM last night?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} sedang ${meaningVerbID} ${O_ID} pada jam 8 malam kemarin?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -941,11 +963,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + was/were + not + being + V3',
-          sentence: `${O_Cap} was not being ${v3} by ${sLower} at 8 PM last night.`.trim()
+          sentence: `${O_Cap} was not being ${v3} by ${sLower} at 8 PM last night.`.trim(),
+          meaning: `${O_Cap} tidak sedang di-${v3} oleh ${sLower} pada jam 8 malam kemarin.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Was/Were + S + being + V3?',
-          sentence: `Was ${oLower} being ${v3} by ${sLower} at 8 PM last night?`.trim()
+          sentence: `Was ${oLower} being ${v3} by ${sLower} at 8 PM last night?`.trim(),
+          meaning: `Apakah ${oLower} sedang di-${v3} oleh ${sLower} pada jam 8 malam kemarin?`
         } : undefined
       }
     },
@@ -971,11 +995,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + had + not + V3 + O',
-          sentence: `${S} had not ${v3} ${O} before the deadline.`.trim()
+          sentence: `${S} had not ${v3} ${O} before the deadline.`.trim(),
+          meaning: `${S_ID} belum ${meaningVerbID} ${O_ID} sebelum tenggat waktu.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Had + S + V3 + O?',
-          sentence: `Had ${sLower} ${v3} ${O} before the deadline?`.trim()
+          sentence: `Had ${sLower} ${v3} ${O} before the deadline?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} telah ${meaningVerbID} ${O_ID} sebelum tenggat waktu?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -988,11 +1014,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + had + not + been + V3',
-          sentence: `${O_Cap} had not been ${v3} by ${sLower} before the deadline.`.trim()
+          sentence: `${O_Cap} had not been ${v3} by ${sLower} before the deadline.`.trim(),
+          meaning: `${O_Cap} belum di-${v3} oleh ${sLower} sebelum tenggat waktu.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Had + S + been + V3?',
-          sentence: `Had ${oLower} been ${v3} by ${sLower} before the deadline?`.trim()
+          sentence: `Had ${oLower} been ${v3} by ${sLower} before the deadline?`.trim(),
+          meaning: `Apakah ${oLower} telah di-${v3} oleh ${sLower} sebelum tenggat waktu?`
         } : undefined
       }
     },
@@ -1018,11 +1046,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + will not be + V-ing + O',
-          sentence: `${S} will not be ${vIng} ${O} at 10 AM tomorrow.`.trim()
+          sentence: `${S} will not be ${vIng} ${O} at 10 AM tomorrow.`.trim(),
+          meaning: `${S_ID} tidak akan sedang ${meaningVerbID} ${O_ID} jam 10 pagi besok.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Will + S + be + V-ing + O?',
-          sentence: `Will ${sLower} be ${vIng} ${O} at 10 AM tomorrow?`.trim()
+          sentence: `Will ${sLower} be ${vIng} ${O} at 10 AM tomorrow?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} akan sedang ${meaningVerbID} ${O_ID} jam 10 pagi besok?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -1035,11 +1065,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + will not be + being + V3',
-          sentence: `${O_Cap} will not be being ${v3} by ${sLower} at 10 AM tomorrow.`.trim()
+          sentence: `${O_Cap} will not be being ${v3} by ${sLower} at 10 AM tomorrow.`.trim(),
+          meaning: `${O_Cap} tidak akan sedang di-${v3} oleh ${sLower} jam 10 pagi besok.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Will + S + be + being + V3?',
-          sentence: `Will ${oLower} be being ${v3} by ${sLower} at 10 AM tomorrow?`.trim()
+          sentence: `Will ${oLower} be being ${v3} by ${sLower} at 10 AM tomorrow?`.trim(),
+          meaning: `Apakah ${oLower} akan sedang di-${v3} oleh ${sLower} jam 10 pagi besok?`
         } : undefined
       }
     },
@@ -1065,11 +1097,13 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         },
         negative: {
           formula: '(-) S + will not have + V3 + O',
-          sentence: `${S} will not have ${v3} ${O} by next month.`.trim()
+          sentence: `${S} will not have ${v3} ${O} by next month.`.trim(),
+          meaning: `${S_ID} belum akan ${meaningVerbID} ${O_ID} menjelang bulan depan.`.replace(/\s+/g, ' ').trim()
         },
         interrogative: {
           formula: '(?) Will + S + have + V3 + O?',
-          sentence: `Will ${sLower} have ${v3} ${O} by next month?`.trim()
+          sentence: `Will ${sLower} have ${v3} ${O} by next month?`.trim(),
+          meaning: `Apakah ${S_ID.toLowerCase()} akan telah ${meaningVerbID} ${O_ID} menjelang bulan depan?`.replace(/\s+/g, ' ').trim()
         }
       },
       passiveVoice: {
@@ -1081,12 +1115,14 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
           meaning: `${O_Cap} akan telah di-${v3} oleh ${sLower} menjelang bulan depan.`
         } : undefined,
         negative: isApplicablePassive ? {
-          formula: '(-) S + will not have + been + V3',
-          sentence: `${O_Cap} will not have been ${v3} by ${sLower} by next month.`.trim()
+          formula: '(-) S + will not have been + V3',
+          sentence: `${O_Cap} will not have been ${v3} by ${sLower} by next month.`.trim(),
+          meaning: `${O_Cap} belum akan di-${v3} oleh ${sLower} menjelang bulan depan.`
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Will + S + have + been + V3?',
-          sentence: `Will ${oLower} have been ${v3} by ${sLower} by next month?`.trim()
+          sentence: `Will ${oLower} have been ${v3} by ${sLower} by next month?`.trim(),
+          meaning: `Apakah ${oLower} akan telah di-${v3} oleh ${sLower} menjelang bulan depan?`
         } : undefined
       }
     }
