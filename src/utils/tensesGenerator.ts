@@ -200,6 +200,12 @@ function getArticle(wordOrPhrase: string): 'a' | 'an' {
   return 'a';
 }
 
+function cleanPrimaryMeaning(meaningId?: string, fallback: string = ''): string {
+  if (!meaningId) return fallback;
+  const primary = meaningId.split(';')[0].split(',')[0].trim();
+  return primary || fallback;
+}
+
 function getVerbForms(targetWord: string, wordObj?: Word): WordInflections {
   if (wordObj && wordObj.v1 && wordObj.v2 && wordObj.v3 && wordObj.v_ing && wordObj.v1 !== '-' && wordObj.v2 !== '-') {
     const v1 = wordObj.v1;
@@ -329,6 +335,8 @@ interface NaturalContext {
   usedVerb: string;
   subject: string;
   object: string;
+  subjectID: string;
+  objectID: string;
   meaningVerbID: string;
   transitivity: 'Transitive' | 'Intransitive' | 'Nominal';
   isDerivedVerb: boolean;
@@ -338,7 +346,7 @@ interface NaturalContext {
 function getNaturalContext(wordObj: Word): NaturalContext {
   const rawPos = (wordObj.pos || '').toLowerCase();
   const wordLower = wordObj.word.toLowerCase().trim();
-  const meaning = (wordObj.meaning_id || '').toLowerCase();
+  const primaryMeaning = cleanPrimaryMeaning(wordObj.meaning_id);
   const isMainVerb = rawPos.includes('verb') || rawPos.includes('v.');
 
   // 1. MAIN VERBS
@@ -351,7 +359,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The student',
         object: 'to the university campus',
-        meaningVerbID: meaning || 'berjalan',
+        subjectID: 'Siswa tersebut',
+        objectID: 'ke kampus universitas',
+        meaningVerbID: primaryMeaning || 'berlari',
         transitivity: 'Intransitive',
         isDerivedVerb: false
       };
@@ -361,7 +371,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The chef',
         object: 'a delicious gourmet dish',
-        meaningVerbID: meaning || 'memasak',
+        subjectID: 'Koki tersebut',
+        objectID: 'hidangan lezat',
+        meaningVerbID: primaryMeaning || 'memasak',
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -371,7 +383,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The candidate',
         object: 'the PTE academic vocabulary',
-        meaningVerbID: meaning || 'mempelajari',
+        subjectID: 'Kandidat tersebut',
+        objectID: 'kosakata akademis PTE',
+        meaningVerbID: primaryMeaning || 'mempelajari',
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -381,7 +395,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The academic author',
         object: 'the research manuscript',
-        meaningVerbID: meaning || 'menulis',
+        subjectID: 'Penulis akademis',
+        objectID: 'naskah penelitian',
+        meaningVerbID: primaryMeaning || 'menulis',
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -391,7 +407,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The professor',
         object: 'undergraduate students',
-        meaningVerbID: meaning || 'mengajar',
+        subjectID: 'Profesor tersebut',
+        objectID: 'mahasiswa S1',
+        meaningVerbID: primaryMeaning || 'mengajar',
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -401,7 +419,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The software engineer',
         object: 'an innovative application',
-        meaningVerbID: meaning || 'mengembangkan',
+        subjectID: 'Insinyur perangkat lunak',
+        objectID: 'aplikasi inovatif',
+        meaningVerbID: primaryMeaning || 'mengembangkan',
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -411,7 +431,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The data scientist',
         object: 'the experimental dataset',
-        meaningVerbID: meaning || 'menganalisis',
+        subjectID: 'Ilmuwan data',
+        objectID: 'set data eksperimen',
+        meaningVerbID: primaryMeaning || 'menganalisis',
         transitivity: 'Transitive',
         isDerivedVerb: false
       };
@@ -421,18 +443,22 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: wordLower,
         subject: 'The natural phenomenon',
         object: '',
-        meaningVerbID: meaning || 'terjadi',
+        subjectID: 'Fenomena alam',
+        objectID: '',
+        meaningVerbID: primaryMeaning || 'terjadi',
         transitivity: 'Intransitive',
         isDerivedVerb: false
       };
     }
 
-    // Default for other main verbs
+    // Default main verbs
     return {
       usedVerb: wordLower,
       subject: 'The scholar',
       object: isIntransitive ? '' : 'the academic assignment',
-      meaningVerbID: meaning || 'melakukan',
+      subjectID: 'Cendekiawan tersebut',
+      objectID: isIntransitive ? '' : 'tugas akademis',
+      meaningVerbID: primaryMeaning || 'melakukan',
       transitivity,
       isDerivedVerb: false
     };
@@ -446,7 +472,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'consult',
         subject: 'The patient',
         object: 'the specialist doctor',
-        meaningVerbID: 'berkonsultasi dengan dokter',
+        subjectID: 'Pasien tersebut',
+        objectID: 'dokter spesialis',
+        meaningVerbID: 'berkonsultasi dengan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -457,7 +485,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'consult',
         subject: 'The student',
         object: 'the subject instructor',
-        meaningVerbID: 'berkonsultasi dengan guru',
+        subjectID: 'Siswa tersebut',
+        objectID: 'guru mata pelajaran',
+        meaningVerbID: 'berkonsultasi dengan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -468,7 +498,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'serve',
         subject: 'The manager',
         object: `the loyal ${wordLower}`,
-        meaningVerbID: `melayani ${meaning || wordLower}`,
+        subjectID: 'Manajer tersebut',
+        objectID: `pelanggan setia (${primaryMeaning || wordLower})`,
+        meaningVerbID: 'melayani',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -479,7 +511,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       usedVerb: 'visit',
       subject: 'My friend',
       object: `his ${wordLower}`,
-      meaningVerbID: `mengunjungi ${meaning || wordLower}`,
+      subjectID: 'Teman saya',
+      objectID: primaryMeaning || wordLower,
+      meaningVerbID: 'mengunjungi',
       transitivity: 'Transitive',
       isDerivedVerb: true,
       derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -493,7 +527,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'upgrade',
         subject: 'The IT department',
         object: `the ${wordLower}`,
-        meaningVerbID: `meningkatkan ${meaning || wordLower}`,
+        subjectID: 'Departemen IT',
+        objectID: `sistem (${primaryMeaning || wordLower})`,
+        meaningVerbID: 'meningkatkan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -504,7 +540,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'implement',
         subject: 'The committee',
         object: `the new ${wordLower}`,
-        meaningVerbID: `menerapkan ${meaning || wordLower}`,
+        subjectID: 'Komite penilai',
+        objectID: `kebijakan baru (${primaryMeaning || wordLower})`,
+        meaningVerbID: 'menerapkan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -515,7 +553,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'publish',
         subject: 'The university press',
         object: `the academic ${wordLower}`,
-        meaningVerbID: `menerbitkan ${meaning || wordLower}`,
+        subjectID: 'Penerbit universitas',
+        objectID: `buku akademis (${primaryMeaning || wordLower})`,
+        meaningVerbID: 'menerbitkan',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -524,9 +564,11 @@ function getNaturalContext(wordObj: Word): NaturalContext {
     if (wordLower.includes('childhood') || wordLower.includes('memory') || wordLower.includes('history') || wordLower.includes('experience')) {
       return {
         usedVerb: 'cherish',
-        subject: 'The student',
+        subject: 'The candidate',
         object: `the fond ${wordLower}`,
-        meaningVerbID: `menghargai ${meaning || wordLower}`,
+        subjectID: 'Kandidat tersebut',
+        objectID: `kenangan (${primaryMeaning || wordLower})`,
+        meaningVerbID: 'menghargai',
         transitivity: 'Transitive',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -538,7 +580,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       usedVerb: 'develop',
       subject: 'The research team',
       object: `the ${wordLower} framework`,
-      meaningVerbID: `mengembangkan kerangka ${meaning || wordLower}`,
+      subjectID: 'Tim peneliti',
+      objectID: `kerangka ${primaryMeaning || wordLower}`,
+      meaningVerbID: 'mengembangkan',
       transitivity: 'Transitive',
       isDerivedVerb: true,
       derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -553,7 +597,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
         usedVerb: 'feel',
         subject: 'The candidate',
         object: wordLower,
-        meaningVerbID: `merasa ${meaning || wordLower}`,
+        subjectID: 'Kandidat tersebut',
+        objectID: primaryMeaning || wordLower,
+        meaningVerbID: 'merasa',
         transitivity: 'Nominal',
         isDerivedVerb: true,
         derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -563,7 +609,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
       usedVerb: 'consider',
       subject: 'The review panel',
       object: `the proposal ${wordLower}`,
-      meaningVerbID: `menganggap ${meaning || wordLower}`,
+      subjectID: 'Komite penilai',
+      objectID: `proposal tersebut (${primaryMeaning || wordLower})`,
+      meaningVerbID: 'menganggap',
       transitivity: 'Transitive',
       isDerivedVerb: true,
       derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -575,7 +623,9 @@ function getNaturalContext(wordObj: Word): NaturalContext {
     usedVerb: 'explain',
     subject: 'The lecturer',
     object: `the concept ${wordLower}`,
-    meaningVerbID: `menjelaskan konsep secara ${meaning || wordLower}`,
+    subjectID: 'Dosen tersebut',
+    objectID: `konsep (${primaryMeaning || wordLower})`,
+    meaningVerbID: 'menjelaskan',
     transitivity: 'Transitive',
     isDerivedVerb: true,
     derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
@@ -586,7 +636,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
   const wordLower = wordObj.word.toLowerCase().trim();
   const context = getNaturalContext(wordObj);
 
-  const { usedVerb, subject: S, object: O, meaningVerbID, transitivity, isDerivedVerb, derivedFromOriginal } = context;
+  const { usedVerb, subject: S, object: O, subjectID: S_ID, objectID: O_ID, meaningVerbID, transitivity, isDerivedVerb, derivedFromOriginal } = context;
 
   const inflections = getVerbForms(usedVerb, wordObj);
   const affixAnalysis = analyzeAffixes(wordObj);
@@ -635,7 +685,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + V1(s/es) + O',
           sentence: `${S} ${v1Singular} ${O} every day.`.trim(),
-          meaning: `${S} ${meaningVerbID} ${O} setiap hari.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} ${meaningVerbID} ${O_ID} setiap hari.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + does/do + not + V1 + O',
@@ -682,7 +732,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + am/is/are + V-ing + O',
           sentence: `${S} is ${vIng} ${O} right now.`.trim(),
-          meaning: `${S} sedang ${meaningVerbID} ${O} saat ini.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} sedang ${meaningVerbID} ${O_ID} saat ini.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + am/is/are + not + V-ing + O',
@@ -729,7 +779,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + has/have + V3 + O',
           sentence: `${S} has ${v3} ${O} recently.`.trim(),
-          meaning: `${S} telah ${meaningVerbID} ${O} baru-baru ini.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} telah ${meaningVerbID} ${O_ID} baru-baru ini.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + has/have + not + V3 + O',
@@ -776,7 +826,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + V2 + O',
           sentence: `${S} ${v2} ${O} yesterday.`.trim(),
-          meaning: `${S} ${meaningVerbID} ${O} kemarin.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} ${meaningVerbID} ${O_ID} kemarin.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + did + not + V1 + O',
@@ -823,7 +873,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + will + V1 + O',
           sentence: `${S} will ${v1} ${O} tomorrow.`.trim(),
-          meaning: `${S} akan ${meaningVerbID} ${O} besok.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} akan ${meaningVerbID} ${O_ID} besok.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + will + not + V1 + O',
@@ -870,7 +920,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + was/were + V-ing + O',
           sentence: `${S} was ${vIng} ${O} at 8 PM last night.`.trim(),
-          meaning: `${S} sedang ${meaningVerbID} ${O} pada jam 8 malam kemarin.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} sedang ${meaningVerbID} ${O_ID} pada jam 8 malam kemarin.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + was/were + not + V-ing + O',
@@ -917,7 +967,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + had + V3 + O',
           sentence: `${S} had ${v3} ${O} before the deadline.`.trim(),
-          meaning: `${S} telah ${meaningVerbID} ${O} sebelum tenggat waktu.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} telah ${meaningVerbID} ${O_ID} sebelum tenggat waktu.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + had + not + V3 + O',
@@ -964,7 +1014,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + will be + V-ing + O',
           sentence: `${S} will be ${vIng} ${O} at 10 AM tomorrow.`.trim(),
-          meaning: `${S} akan sedang ${meaningVerbID} ${O} jam 10 pagi besok.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} akan sedang ${meaningVerbID} ${O_ID} jam 10 pagi besok.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + will not be + V-ing + O',
@@ -1011,7 +1061,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + will have + V3 + O',
           sentence: `${S} will have ${v3} ${O} by next month.`.trim(),
-          meaning: `${S} akan telah ${meaningVerbID} ${O} menjelang bulan depan.`.replace(/\s+/g, ' ').trim()
+          meaning: `${S_ID} akan telah ${meaningVerbID} ${O_ID} menjelang bulan depan.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + will not have + V3 + O',
