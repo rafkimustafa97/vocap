@@ -90,8 +90,94 @@ const INTRANSITIVE_VERBS = new Set([
   'belong', 'arrive', 'depart', 'sleep', 'die', 'happen', 'stay',
   'emerge', 'fluctuate', 'remain', 'succeed', 'hesitate', 'wander',
   'appear', 'collapse', 'deteriorate', 'resonate', 'expire', 'vanish',
-  'thrive', 'adapt', 'persist', 'decay'
+  'thrive', 'adapt', 'persist', 'decay', 'walk', 'run', 'swim', 'fly', 'climb'
 ]);
+
+const IRREGULAR_VERBS: Record<string, [string, string, string]> = {
+  be: ["was/were", "been", "being"],
+  have: ["had", "had", "having"],
+  do: ["did", "done", "doing"],
+  say: ["said", "said", "saying"],
+  go: ["went", "gone", "going"],
+  get: ["got", "gotten", "getting"],
+  make: ["made", "made", "making"],
+  know: ["knew", "known", "knowing"],
+  think: ["thought", "thought", "thinking"],
+  take: ["took", "taken", "taking"],
+  see: ["saw", "seen", "seeing"],
+  come: ["came", "come", "coming"],
+  find: ["found", "found", "finding"],
+  give: ["gave", "given", "giving"],
+  tell: ["told", "told", "telling"],
+  become: ["became", "become", "becoming"],
+  leave: ["left", "left", "leaving"],
+  put: ["put", "put", "putting"],
+  mean: ["meant", "meant", "meaning"],
+  keep: ["kept", "kept", "keeping"],
+  let: ["let", "let", "letting"],
+  begin: ["began", "begun", "beginning"],
+  show: ["showed", "shown", "showing"],
+  hear: ["heard", "heard", "hearing"],
+  run: ["ran", "run", "running"],
+  bring: ["brought", "brought", "bringing"],
+  write: ["wrote", "written", "writing"],
+  sit: ["sat", "sat", "sitting"],
+  stand: ["stood", "stood", "standing"],
+  lose: ["lost", "lost", "losing"],
+  pay: ["paid", "paid", "paying"],
+  meet: ["met", "met", "meeting"],
+  set: ["set", "set", "setting"],
+  lead: ["led", "led", "leading"],
+  understand: ["understood", "understood", "understanding"],
+  speak: ["spoke", "spoken", "speaking"],
+  read: ["read", "read", "reading"],
+  spend: ["spent", "spent", "spending"],
+  grow: ["grew", "grown", "growing"],
+  win: ["won", "won", "winning"],
+  buy: ["bought", "bought", "buying"],
+  build: ["built", "built", "building"],
+  fall: ["fell", "fallen", "falling"],
+  cut: ["cut", "cut", "cutting"],
+  sell: ["sold", "sold", "selling"],
+  break: ["broke", "broken", "breaking"],
+  drive: ["drove", "driven", "driving"],
+  draw: ["drew", "drawn", "drawing"],
+  choose: ["chose", "chosen", "choosing"],
+  teach: ["taught", "taught", "teaching"],
+  catch: ["caught", "caught", "catching"],
+  fly: ["flew", "flown", "flying"],
+  swim: ["swam", "swum", "swimming"],
+  throw: ["threw", "thrown", "throwing"],
+  wear: ["wore", "worn", "wearing"],
+  sing: ["sang", "sung", "singing"],
+  ring: ["rang", "rung", "ringing"],
+  drink: ["drank", "drunk", "drinking"],
+  eat: ["ate", "eaten", "eating"],
+  sleep: ["slept", "slept", "sleeping"],
+  forget: ["forgot", "forgotten", "forgetting"],
+  forgive: ["forgave", "forgiven", "forgiving"],
+  shake: ["shook", "shaken", "shaking"],
+  freeze: ["froze", "frozen", "freezing"],
+  hide: ["hid", "hidden", "hiding"],
+  strike: ["struck", "struck", "striking"],
+  bend: ["bent", "bent", "bending"],
+  send: ["sent", "sent", "sending"],
+  lend: ["lent", "lent", "lending"],
+  sweep: ["swept", "swept", "sweeping"],
+  creep: ["crept", "crept", "creeping"],
+  bleed: ["bled", "bled", "bleeding"],
+  feed: ["fed", "fed", "feeding"],
+  speed: ["sped", "sped", "speeding"],
+  burst: ["burst", "burst", "bursting"],
+  cost: ["cost", "cost", "costing"],
+  hit: ["hit", "hit", "hitting"],
+  hurt: ["hurt", "hurt", "hurting"],
+  shut: ["shut", "shut", "shutting"],
+  spread: ["spread", "spread", "spreading"],
+  split: ["split", "split", "splitting"],
+  rise: ["rose", "risen", "rising"],
+  arise: ["arose", "arisen", "arising"]
+};
 
 function capitalize(s: string): string {
   if (!s) return '';
@@ -115,7 +201,7 @@ function getArticle(wordOrPhrase: string): 'a' | 'an' {
 }
 
 function getVerbForms(targetWord: string, wordObj?: Word): WordInflections {
-  if (wordObj && wordObj.v1 && wordObj.v2 && wordObj.v3 && wordObj.v_ing && wordObj.v1 !== '-') {
+  if (wordObj && wordObj.v1 && wordObj.v2 && wordObj.v3 && wordObj.v_ing && wordObj.v1 !== '-' && wordObj.v2 !== '-') {
     const v1 = wordObj.v1;
     let v1Singular = v1 + 's';
     if (v1.endsWith('y') && !/[aeiou]y$/.test(v1)) {
@@ -132,8 +218,18 @@ function getVerbForms(targetWord: string, wordObj?: Word): WordInflections {
     };
   }
 
-  let baseWord = targetWord.toLowerCase().trim();
-  const v = baseWord;
+  let v = targetWord.toLowerCase().trim();
+
+  if (IRREGULAR_VERBS[v]) {
+    const [v2, v3, vIng] = IRREGULAR_VERBS[v];
+    let v1Singular = v + 's';
+    if (v.endsWith('y') && !/[aeiou]y$/.test(v)) {
+      v1Singular = v.slice(0, -1) + 'ies';
+    } else if (/[s|x|z|ch|sh|o]$/.test(v)) {
+      v1Singular = v + 'es';
+    }
+    return { v1: v, v1Singular, v2, v3, vIng };
+  }
 
   let v1Singular = v + 's';
   if (v.endsWith('y') && !/[aeiou]y$/.test(v)) {
@@ -185,16 +281,7 @@ function analyzeAffixes(wordObj: Word): AffixAnalysis {
     prefixMeaning = 'Kebalikan / Tidak (Not/Opposite)';
   } else if (w.startsWith('dis')) {
     prefix = 'Dis-';
-    prefixMeaning = 'Tidak / Terpisah (Not/Apart)';
-  } else if (w.startsWith('in') || w.startsWith('im')) {
-    prefix = w.startsWith('im') ? 'Im-' : 'In-';
-    prefixMeaning = 'Tidak / Ke dalam (Not/Into)';
-  } else if (w.startsWith('sub')) {
-    prefix = 'Sub-';
-    prefixMeaning = 'Di bawah / Bagian (Under/Below)';
-  } else if (w.startsWith('trans')) {
-    prefix = 'Trans-';
-    prefixMeaning = 'Seberang / Lintas (Across/Change)';
+    prefixMeaning = 'Kebalikan / Tidak menyukai (Not/Reverse)';
   } else if (w.startsWith('pre')) {
     prefix = 'Pre-';
     prefixMeaning = 'Sebelum / Awal (Before)';
@@ -238,84 +325,268 @@ function analyzeAffixes(wordObj: Word): AffixAnalysis {
   };
 }
 
-export function generateSmartTenses(wordObj: Word): SmartTensesResult {
+interface NaturalContext {
+  usedVerb: string;
+  subject: string;
+  object: string;
+  meaningVerbID: string;
+  transitivity: 'Transitive' | 'Intransitive' | 'Nominal';
+  isDerivedVerb: boolean;
+  derivedFromOriginal?: string;
+}
+
+function getNaturalContext(wordObj: Word): NaturalContext {
   const rawPos = (wordObj.pos || '').toLowerCase();
   const wordLower = wordObj.word.toLowerCase().trim();
+  const meaning = (wordObj.meaning_id || '').toLowerCase();
   const isMainVerb = rawPos.includes('verb') || rawPos.includes('v.');
 
-  let usedVerb = wordLower;
-  let subject = 'The researcher';
-  let object = 'the project findings';
-  let meaningVerbID = wordObj.meaning_id || 'menerapkan';
-  let transitivity: 'Transitive' | 'Intransitive' | 'Nominal' = 'Transitive';
-  let isDerivedVerb = false;
-  let derivedFromOriginal: string | undefined = undefined;
-
-  const familyNouns = ['parent', 'child', 'niece', 'nephew', 'son', 'daughter', 'brother', 'sister', 'mother', 'father', 'aunt', 'uncle', 'cousin', 'relative', 'baby', 'kid', 'student', 'teacher', 'doctor'];
-  const isPeopleNoun = familyNouns.some(n => wordLower.includes(n)) || rawPos.includes('person');
-
+  // 1. MAIN VERBS
   if (isMainVerb) {
-    usedVerb = wordLower;
-    if (wordObj.verb_type === 'intransitive' || INTRANSITIVE_VERBS.has(wordLower)) {
-      transitivity = 'Intransitive';
-    } else {
-      transitivity = 'Transitive';
+    const isIntransitive = wordObj.verb_type === 'intransitive' || INTRANSITIVE_VERBS.has(wordLower);
+    const transitivity: 'Transitive' | 'Intransitive' | 'Nominal' = isIntransitive ? 'Intransitive' : 'Transitive';
+
+    if (wordLower === 'walk' || wordLower === 'run' || wordLower === 'travel' || wordLower === 'hike') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The student',
+        object: 'to the university campus',
+        meaningVerbID: meaning || 'berjalan',
+        transitivity: 'Intransitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'cook' || wordLower === 'prepare' || wordLower === 'bake') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The chef',
+        object: 'a delicious gourmet dish',
+        meaningVerbID: meaning || 'memasak',
+        transitivity: 'Transitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'study' || wordLower === 'learn' || wordLower === 'read' || wordLower === 'memorize') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The candidate',
+        object: 'the PTE academic vocabulary',
+        meaningVerbID: meaning || 'mempelajari',
+        transitivity: 'Transitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'write' || wordLower === 'compose' || wordLower === 'draft' || wordLower === 'publish') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The academic author',
+        object: 'the research manuscript',
+        meaningVerbID: meaning || 'menulis',
+        transitivity: 'Transitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'teach' || wordLower === 'guide' || wordLower === 'instruct' || wordLower === 'lecture') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The professor',
+        object: 'undergraduate students',
+        meaningVerbID: meaning || 'mengajar',
+        transitivity: 'Transitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'develop' || wordLower === 'build' || wordLower === 'create' || wordLower === 'design') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The software engineer',
+        object: 'an innovative application',
+        meaningVerbID: meaning || 'mengembangkan',
+        transitivity: 'Transitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'analyze' || wordLower === 'examine' || wordLower === 'investigate' || wordLower === 'inspect') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The data scientist',
+        object: 'the experimental dataset',
+        meaningVerbID: meaning || 'menganalisis',
+        transitivity: 'Transitive',
+        isDerivedVerb: false
+      };
+    }
+    if (wordLower === 'occur' || wordLower === 'happen' || wordLower === 'arise' || wordLower === 'exist' || wordLower === 'disappear') {
+      return {
+        usedVerb: wordLower,
+        subject: 'The natural phenomenon',
+        object: '',
+        meaningVerbID: meaning || 'terjadi',
+        transitivity: 'Intransitive',
+        isDerivedVerb: false
+      };
     }
 
-    if (usedVerb === 'analyze') {
-      subject = 'The scientist';
-      object = 'the experimental data';
-      meaningVerbID = 'menganalisis';
-    } else if (usedVerb === 'implement') {
-      subject = 'The academic committee';
-      object = 'the research policy';
-      meaningVerbID = 'melaksanakan';
-    } else if (usedVerb === 'evaluate') {
-      subject = 'The university board';
-      object = 'the academic proposal';
-      meaningVerbID = 'mengevaluasi';
-    } else if (usedVerb === 'educate') {
-      subject = 'The institution';
-      object = 'undergraduate students';
-      meaningVerbID = 'mendidik';
-    } else if (usedVerb === 'occur' || usedVerb === 'arise') {
-      subject = 'The natural phenomenon';
-      object = '';
-      meaningVerbID = 'terjadi';
-    }
-  } else if (isPeopleNoun) {
-    usedVerb = 'visit';
-    isDerivedVerb = true;
-    derivedFromOriginal = `${wordObj.word} (${wordObj.pos})`;
-    subject = 'My friend';
-    object = `his ${wordLower}`;
-    meaningVerbID = `mengunjungi ${wordObj.meaning_id || wordLower}`;
-    transitivity = 'Transitive';
-  } else if (rawPos.includes('noun')) {
-    usedVerb = 'apply';
-    isDerivedVerb = true;
-    derivedFromOriginal = `${wordObj.word} (${wordObj.pos})`;
-    subject = 'The research team';
-    object = `the ${wordLower} strategy`;
-    meaningVerbID = `menerapkan strategi ${wordObj.meaning_id || wordLower}`;
-    transitivity = 'Transitive';
-  } else if (rawPos.includes('adj')) {
-    usedVerb = 'consider';
-    isDerivedVerb = true;
-    derivedFromOriginal = `${wordObj.word} (${wordObj.pos})`;
-    subject = 'The academic committee';
-    object = `the findings ${wordLower}`;
-    meaningVerbID = `menganggap ${wordObj.meaning_id || wordLower}`;
-    transitivity = 'Transitive';
-  } else if (rawPos.includes('adv')) {
-    usedVerb = 'explain';
-    isDerivedVerb = true;
-    derivedFromOriginal = `${wordObj.word} (${wordObj.pos})`;
-    subject = 'The professor';
-    object = `the concept ${wordLower}`;
-    meaningVerbID = `menjelaskan konsep dengan ${wordObj.meaning_id || wordLower}`;
-    transitivity = 'Transitive';
+    // Default for other main verbs
+    return {
+      usedVerb: wordLower,
+      subject: 'The scholar',
+      object: isIntransitive ? '' : 'the academic assignment',
+      meaningVerbID: meaning || 'melakukan',
+      transitivity,
+      isDerivedVerb: false
+    };
   }
+
+  // 2. PEOPLE / FAMILY / ROLES NOUNS
+  const peopleKeywords = ['mother', 'father', 'parent', 'child', 'niece', 'nephew', 'son', 'daughter', 'brother', 'sister', 'aunt', 'uncle', 'cousin', 'friend', 'doctor', 'patient', 'teacher', 'student', 'client', 'customer'];
+  if (peopleKeywords.some(k => wordLower.includes(k)) || rawPos.includes('person')) {
+    if (wordLower.includes('doctor')) {
+      return {
+        usedVerb: 'consult',
+        subject: 'The patient',
+        object: 'the specialist doctor',
+        meaningVerbID: 'berkonsultasi dengan dokter',
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    if (wordLower.includes('teacher') || wordLower.includes('instructor')) {
+      return {
+        usedVerb: 'consult',
+        subject: 'The student',
+        object: 'the subject instructor',
+        meaningVerbID: 'berkonsultasi dengan guru',
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    if (wordLower.includes('customer') || wordLower.includes('client')) {
+      return {
+        usedVerb: 'serve',
+        subject: 'The manager',
+        object: `the loyal ${wordLower}`,
+        meaningVerbID: `melayani ${meaning || wordLower}`,
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    // Family default
+    return {
+      usedVerb: 'visit',
+      subject: 'My friend',
+      object: `his ${wordLower}`,
+      meaningVerbID: `mengunjungi ${meaning || wordLower}`,
+      transitivity: 'Transitive',
+      isDerivedVerb: true,
+      derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+    };
+  }
+
+  // 3. ABSTRACT / CONCEPT / SYSTEM NOUNS
+  if (rawPos.includes('noun')) {
+    if (wordLower.includes('system') || wordLower.includes('network') || wordLower.includes('software')) {
+      return {
+        usedVerb: 'upgrade',
+        subject: 'The IT department',
+        object: `the ${wordLower}`,
+        meaningVerbID: `meningkatkan ${meaning || wordLower}`,
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    if (wordLower.includes('policy') || wordLower.includes('rule') || wordLower.includes('law') || wordLower.includes('strategy')) {
+      return {
+        usedVerb: 'implement',
+        subject: 'The committee',
+        object: `the new ${wordLower}`,
+        meaningVerbID: `menerapkan ${meaning || wordLower}`,
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    if (wordLower.includes('book') || wordLower.includes('paper') || wordLower.includes('report') || wordLower.includes('article')) {
+      return {
+        usedVerb: 'publish',
+        subject: 'The university press',
+        object: `the academic ${wordLower}`,
+        meaningVerbID: `menerbitkan ${meaning || wordLower}`,
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    if (wordLower.includes('childhood') || wordLower.includes('memory') || wordLower.includes('history') || wordLower.includes('experience')) {
+      return {
+        usedVerb: 'cherish',
+        subject: 'The student',
+        object: `the fond ${wordLower}`,
+        meaningVerbID: `menghargai ${meaning || wordLower}`,
+        transitivity: 'Transitive',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+
+    // Noun default
+    return {
+      usedVerb: 'develop',
+      subject: 'The research team',
+      object: `the ${wordLower} framework`,
+      meaningVerbID: `mengembangkan kerangka ${meaning || wordLower}`,
+      transitivity: 'Transitive',
+      isDerivedVerb: true,
+      derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+    };
+  }
+
+  // 4. ADJECTIVES (EMOTION VS ATTRIBUTE)
+  if (rawPos.includes('adj')) {
+    const emotionKeywords = ['happy', 'sad', 'glad', 'proud', 'anxious', 'confident', 'curious', 'eager', 'nervous', 'calm'];
+    if (emotionKeywords.some(e => wordLower.includes(e))) {
+      return {
+        usedVerb: 'feel',
+        subject: 'The candidate',
+        object: wordLower,
+        meaningVerbID: `merasa ${meaning || wordLower}`,
+        transitivity: 'Nominal',
+        isDerivedVerb: true,
+        derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+      };
+    }
+    return {
+      usedVerb: 'consider',
+      subject: 'The review panel',
+      object: `the proposal ${wordLower}`,
+      meaningVerbID: `menganggap ${meaning || wordLower}`,
+      transitivity: 'Transitive',
+      isDerivedVerb: true,
+      derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+    };
+  }
+
+  // 5. ADVERBS
+  return {
+    usedVerb: 'explain',
+    subject: 'The lecturer',
+    object: `the concept ${wordLower}`,
+    meaningVerbID: `menjelaskan konsep secara ${meaning || wordLower}`,
+    transitivity: 'Transitive',
+    isDerivedVerb: true,
+    derivedFromOriginal: `${wordObj.word} (${wordObj.pos})`
+  };
+}
+
+export function generateSmartTenses(wordObj: Word): SmartTensesResult {
+  const wordLower = wordObj.word.toLowerCase().trim();
+  const context = getNaturalContext(wordObj);
+
+  const { usedVerb, subject: S, object: O, meaningVerbID, transitivity, isDerivedVerb, derivedFromOriginal } = context;
 
   const inflections = getVerbForms(usedVerb, wordObj);
   const affixAnalysis = analyzeAffixes(wordObj);
@@ -333,11 +604,11 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
     isTransitive: transitivity === 'Transitive',
     explanation: transitivity === 'Transitive'
       ? 'Kata kerja ini bertipe TRANSITIF (membutuhkan objek penderita). Oleh karena itu, kata ini DAPAT diubah menjadi bentuk Pasif Voice (+, -, ?).'
+      : transitivity === 'Nominal'
+      ? `Kata ini bertipe ${wordObj.pos.toUpperCase()}. Menggunakan struktur Nominal To Be. Kalimat nominal tidak memiliki bentuk Pasif Transitif.`
       : 'Kata kerja ini bertipe INTRANSITIF (tidak memerlukan objek penderita). Dalam tata bahasa Inggris baku, kata ini TIDAK BISA diubah menjadi bentuk Pasif Voice.'
   };
 
-  const S = subject;
-  const O = object;
   const sLower = S.toLowerCase();
   const oLower = O.toLowerCase();
   const O_Cap = capitalize(O);
@@ -364,7 +635,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + V1(s/es) + O',
           sentence: `${S} ${v1Singular} ${O} every day.`.trim(),
-          meaning: `${S} ${meaningVerbID} setiap hari.`
+          meaning: `${S} ${meaningVerbID} ${O} setiap hari.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + does/do + not + V1 + O',
@@ -377,7 +648,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
         positive: isApplicablePassive ? {
           formula: '(+) S + am/is/are + V3 + by Agent',
           sentence: `${O_Cap} is ${v3} by ${sLower} every day.`.trim(),
@@ -411,7 +682,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
         positive: {
           formula: '(+) S + am/is/are + V-ing + O',
           sentence: `${S} is ${vIng} ${O} right now.`.trim(),
-          meaning: `${S} sedang ${meaningVerbID} saat ini.`
+          meaning: `${S} sedang ${meaningVerbID} ${O} saat ini.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + am/is/are + not + V-ing + O',
@@ -424,7 +695,7 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
         positive: isApplicablePassive ? {
           formula: '(+) S + am/is/are + being + V3',
           sentence: `${O_Cap} is being ${v3} by ${sLower} right now.`.trim(),
@@ -451,38 +722,38 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       toBeStructure: {
         auxiliaryText: 'has / have + V3 → (has: He/She/It/Tunggal, have: I/You/We/They/Jamak)',
         toBeText: 'has been / have been + V3 (Bentuk Pasif)',
-        passiveNote: 'Digunakan untuk aksi yang telah selesai dengan dampak yang masih berlangsung.'
+        passiveNote: 'Menyatakan bahwa objek telah menerima aksi tersebut.'
       },
       category: 'dasar',
       activeVoice: {
         positive: {
-          formula: '(+) S + have/has + V3 + O',
+          formula: '(+) S + has/have + V3 + O',
           sentence: `${S} has ${v3} ${O} recently.`.trim(),
-          meaning: `${S} telah ${meaningVerbID} baru-baru ini.`
+          meaning: `${S} telah ${meaningVerbID} ${O} baru-baru ini.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
-          formula: '(-) S + have/has + not + V3 + O',
+          formula: '(-) S + has/have + not + V3 + O',
           sentence: `${S} has not ${v3} ${O} recently.`.trim()
         },
         interrogative: {
-          formula: '(?) Have/Has + S + V3 + O?',
+          formula: '(?) Has/Have + S + V3 + O?',
           sentence: `Has ${sLower} ${v3} ${O} recently?`.trim()
         }
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
         positive: isApplicablePassive ? {
-          formula: '(+) S + have/has + been + V3',
+          formula: '(+) S + has/have + been + V3',
           sentence: `${O_Cap} has been ${v3} by ${sLower} recently.`.trim(),
           meaning: `${O_Cap} telah di-${v3} oleh ${sLower} baru-baru ini.`
         } : undefined,
         negative: isApplicablePassive ? {
-          formula: '(-) S + have/has + not + been + V3',
+          formula: '(-) S + has/have + not + been + V3',
           sentence: `${O_Cap} has not been ${v3} by ${sLower} recently.`.trim()
         } : undefined,
         interrogative: isApplicablePassive ? {
-          formula: '(?) Have/Has + S + been + V3?',
+          formula: '(?) Has/Have + S + been + V3?',
           sentence: `Has ${oLower} been ${v3} by ${sLower} recently?`.trim()
         } : undefined
       }
@@ -492,20 +763,20 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
     {
       id: 4,
       tenseName: 'Simple Past Tense',
-      timeSignal: 'yesterday, last night, two days ago',
-      usageContext: 'Menyatakan aksi yang terjadi dan selesai di masa lampau.',
-      toBeExplanation: 'Auxiliary Verb: "did" (pada - dan ?). To Be: "was / were" (was: I/He/She/It, were: You/We/They).',
+      timeSignal: 'yesterday, last week, two days ago',
+      usageContext: 'Menyatakan aksi yang terjadi dan selesai sepenuhnya di masa lampau.',
+      toBeExplanation: 'Auxiliary Verb: "did" (pada kalimat - & ?). To Be (Nomina & Pasif): "was / were" (was: I/He/She/It/Tunggal, were: You/We/They/Jamak).',
       toBeStructure: {
-        auxiliaryText: 'did → (semua subjek pada kalimat negatif dan tanya)',
-        toBeText: 'was / were → (was: I/He/She/It/Tunggal, were: You/We/They/Jamak)',
-        passiveNote: 'Menyatakan aksi lampau yang telah sepenuhnya berakhir.'
+        auxiliaryText: 'did → (Berlaku untuk semua subjek pada kalimat aktif - & ?)',
+        toBeText: 'was / were → (was: Tunggal/I/He/She/It, were: Jamak/You/We/They)',
+        passiveNote: 'Digunakan untuk aksi masa lalu yang sudah selesai.'
       },
       category: 'dasar',
       activeVoice: {
         positive: {
           formula: '(+) S + V2 + O',
           sentence: `${S} ${v2} ${O} yesterday.`.trim(),
-          meaning: `${S} ${meaningVerbID} kemarin.`
+          meaning: `${S} ${meaningVerbID} ${O} kemarin.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + did + not + V1 + O',
@@ -518,9 +789,9 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
         positive: isApplicablePassive ? {
-          formula: '(+) S + was/were + V3',
+          formula: '(+) S + was/were + V3 + by Agent',
           sentence: `${O_Cap} was ${v3} by ${sLower} yesterday.`.trim(),
           meaning: `${O_Cap} di-${v3} oleh ${sLower} kemarin.`
         } : undefined,
@@ -540,19 +811,19 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       id: 5,
       tenseName: 'Simple Future Tense',
       timeSignal: 'tomorrow, next week, soon',
-      usageContext: 'Menyatakan aksi yang akan dilakukan di masa depan.',
-      toBeExplanation: 'Modal Auxiliary: "will" + V1 (semua subjek). Bentuk Pasif ditambahkan "be" + V3.',
+      usageContext: 'Menyatakan janji, keputusan spontan, atau prediksi masa depan.',
+      toBeExplanation: 'Auxiliary Verb: "will" + V1. Bentuk Pasif / Nomina: "will be" + V3 / Kata Sifat.',
       toBeStructure: {
-        auxiliaryText: 'will + V1 → (berlaku universal untuk semua subjek)',
-        toBeText: 'will be + V3 (Bentuk Pasif / Nominal)',
-        passiveNote: 'Menyatakan rencana atau prediksi aksi di masa depan.'
+        auxiliaryText: 'will + V1 → (Berlaku untuk seluruh subjek)',
+        toBeText: 'will be + V3 (Bentuk Pasif / Nomina)',
+        passiveNote: 'Menyatakan rencana atau kejadian di masa mendatang.'
       },
       category: 'dasar',
       activeVoice: {
         positive: {
           formula: '(+) S + will + V1 + O',
           sentence: `${S} will ${v1} ${O} tomorrow.`.trim(),
-          meaning: `${S} akan ${meaningVerbID} besok.`
+          meaning: `${S} akan ${meaningVerbID} ${O} besok.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + will + not + V1 + O',
@@ -565,14 +836,14 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
         positive: isApplicablePassive ? {
-          formula: '(+) S + will + be + V3',
+          formula: '(+) S + will be + V3',
           sentence: `${O_Cap} will be ${v3} by ${sLower} tomorrow.`.trim(),
           meaning: `${O_Cap} akan di-${v3} oleh ${sLower} besok.`
         } : undefined,
         negative: isApplicablePassive ? {
-          formula: '(-) S + will + not + be + V3',
+          formula: '(-) S + will not be + V3',
           sentence: `${O_Cap} will not be ${v3} by ${sLower} tomorrow.`.trim()
         } : undefined,
         interrogative: isApplicablePassive ? {
@@ -586,45 +857,45 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
     {
       id: 6,
       tenseName: 'Past Continuous Tense',
-      timeSignal: 'at 8 AM yesterday, when I arrived',
+      timeSignal: 'at 8 PM last night, when the alarm rang',
       usageContext: 'Menyatakan aksi yang sedang berlangsung pada titik waktu tertentu di masa lalu.',
-      toBeExplanation: 'To Be: "was / were" + V-ing. Bentuk Pasif: "was being / were being" + V3.',
+      toBeExplanation: 'To Be: "was / were" + V-ing (was: I/He/She/It, were: You/We/They). Pasif: "was/were being" + V3.',
       toBeStructure: {
-        auxiliaryText: 'was / were + V-ing → (was: I/He/She/It, were: You/We/They)',
+        auxiliaryText: 'was / were + V-ing → (was: I/He/She/It/Tunggal, were: You/We/They/Jamak)',
         toBeText: 'was being / were being + V3 (Bentuk Pasif)',
-        passiveNote: 'Aksi pasif yang sedang berlangsung di masa lalu.'
+        passiveNote: 'Proses yang sedang dialami objek pada saat tertentu di masa lalu.'
       },
       category: 'tambahan',
       activeVoice: {
         positive: {
           formula: '(+) S + was/were + V-ing + O',
-          sentence: `${S} was ${vIng} ${O} at 8 AM yesterday.`.trim(),
-          meaning: `${S} sedang ${meaningVerbID} jam 8 pagi kemarin.`
+          sentence: `${S} was ${vIng} ${O} at 8 PM last night.`.trim(),
+          meaning: `${S} sedang ${meaningVerbID} ${O} pada jam 8 malam kemarin.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + was/were + not + V-ing + O',
-          sentence: `${S} was not ${vIng} ${O} at 8 AM yesterday.`.trim()
+          sentence: `${S} was not ${vIng} ${O} at 8 PM last night.`.trim()
         },
         interrogative: {
           formula: '(?) Was/Were + S + V-ing + O?',
-          sentence: `Was ${sLower} ${vIng} ${O} at 8 AM yesterday?`.trim()
+          sentence: `Was ${sLower} ${vIng} ${O} at 8 PM last night?`.trim()
         }
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif)' : undefined,
         positive: isApplicablePassive ? {
           formula: '(+) S + was/were + being + V3',
-          sentence: `${O_Cap} was being ${v3} by ${sLower} at 8 AM yesterday.`.trim(),
-          meaning: `${O_Cap} sedang di-${v3} oleh ${sLower} jam 8 pagi kemarin.`
+          sentence: `${O_Cap} was being ${v3} by ${sLower} at 8 PM last night.`.trim(),
+          meaning: `${O_Cap} sedang di-${v3} oleh ${sLower} pada jam 8 malam kemarin.`
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + was/were + not + being + V3',
-          sentence: `${O_Cap} was not being ${v3} by ${sLower} at 8 AM yesterday.`.trim()
+          sentence: `${O_Cap} was not being ${v3} by ${sLower} at 8 PM last night.`.trim()
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Was/Were + S + being + V3?',
-          sentence: `Was ${oLower} being ${v3} by ${sLower} at 8 AM yesterday?`.trim()
+          sentence: `Was ${oLower} being ${v3} by ${sLower} at 8 PM last night?`.trim()
         } : undefined
       }
     },
@@ -633,45 +904,45 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
     {
       id: 7,
       tenseName: 'Past Perfect Tense',
-      timeSignal: 'before, after, by the time',
-      usageContext: 'Menyatakan aksi yang sudah selesai sebelum aksi lain terjadi di masa lalu.',
-      toBeExplanation: 'Auxiliary Verb: "had" + V3 (semua subjek). Bentuk Pasif: "had been" + V3.',
+      timeSignal: 'before the deadline, by the time',
+      usageContext: 'Menyatakan aksi yang sudah selesai sebelum kejadian lain terjadi di masa lalu.',
+      toBeExplanation: 'Auxiliary Verb: "had" + V3. Pasif: "had been" + V3.',
       toBeStructure: {
-        auxiliaryText: 'had + V3 → (berlaku universal untuk semua subjek)',
+        auxiliaryText: 'had + V3 → (Berlaku untuk seluruh subjek)',
         toBeText: 'had been + V3 (Bentuk Pasif)',
-        passiveNote: 'Menyatakan urutan dua peristiwa lampau.'
+        passiveNote: 'Menunjukkan prioritas waktu yang lebih lampau.'
       },
       category: 'tambahan',
       activeVoice: {
         positive: {
           formula: '(+) S + had + V3 + O',
-          sentence: `${S} had ${v3} ${O} before the meeting.`.trim(),
-          meaning: `${S} telah ${meaningVerbID} sebelum rapat dimulai.`
+          sentence: `${S} had ${v3} ${O} before the deadline.`.trim(),
+          meaning: `${S} telah ${meaningVerbID} ${O} sebelum tenggat waktu.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
           formula: '(-) S + had + not + V3 + O',
-          sentence: `${S} had not ${v3} ${O} before the meeting.`.trim()
+          sentence: `${S} had not ${v3} ${O} before the deadline.`.trim()
         },
         interrogative: {
           formula: '(?) Had + S + V3 + O?',
-          sentence: `Had ${sLower} ${v3} ${O} before the meeting?`.trim()
+          sentence: `Had ${sLower} ${v3} ${O} before the deadline?`.trim()
         }
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif)' : undefined,
         positive: isApplicablePassive ? {
           formula: '(+) S + had + been + V3',
-          sentence: `${O_Cap} had been ${v3} by ${sLower} before the meeting.`.trim(),
-          meaning: `${O_Cap} telah di-${v3} oleh ${sLower} sebelum rapat dimulai.`
+          sentence: `${O_Cap} had been ${v3} by ${sLower} before the deadline.`.trim(),
+          meaning: `${O_Cap} telah di-${v3} oleh ${sLower} sebelum tenggat waktu.`
         } : undefined,
         negative: isApplicablePassive ? {
           formula: '(-) S + had + not + been + V3',
-          sentence: `${O_Cap} had not been ${v3} by ${sLower} before the meeting.`.trim()
+          sentence: `${O_Cap} had not been ${v3} by ${sLower} before the deadline.`.trim()
         } : undefined,
         interrogative: isApplicablePassive ? {
           formula: '(?) Had + S + been + V3?',
-          sentence: `Had ${oLower} been ${v3} by ${sLower} before the meeting?`.trim()
+          sentence: `Had ${oLower} been ${v3} by ${sLower} before the deadline?`.trim()
         } : undefined
       }
     },
@@ -681,22 +952,22 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       id: 8,
       tenseName: 'Future Continuous Tense',
       timeSignal: 'at 10 AM tomorrow, this time next week',
-      usageContext: 'Menyatakan aksi yang akan sedang berlangsung pada waktu tertentu di masa depan.',
-      toBeExplanation: 'To Be: "will be" + V-ing. Bentuk Pasif: "will be being" + V3.',
+      usageContext: 'Menyatakan aksi yang akan sedang berlangsung pada titik waktu tertentu di masa depan.',
+      toBeExplanation: 'Auxiliary Verb: "will be" + V-ing.',
       toBeStructure: {
-        auxiliaryText: 'will be + V-ing → (berlaku universal untuk semua subjek)',
-        toBeText: 'will be being + V3 (Bentuk Pasif - jarang digunakan)',
-        passiveNote: 'Menyatakan proses aksi yang diproyeksikan di masa depan.'
+        auxiliaryText: 'will be + V-ing → (Berlaku untuk seluruh subjek)',
+        toBeText: 'will be being + V3 (Bentuk Pasif Jarang)',
+        passiveNote: 'Aksi yang sedang dalam proses di masa mendatang.'
       },
       category: 'tambahan',
       activeVoice: {
         positive: {
-          formula: '(+) S + will + be + V-ing + O',
+          formula: '(+) S + will be + V-ing + O',
           sentence: `${S} will be ${vIng} ${O} at 10 AM tomorrow.`.trim(),
-          meaning: `${S} akan sedang ${meaningVerbID} jam 10 pagi besok.`
+          meaning: `${S} akan sedang ${meaningVerbID} ${O} jam 10 pagi besok.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
-          formula: '(-) S + will + not + be + V-ing + O',
+          formula: '(-) S + will not be + V-ing + O',
           sentence: `${S} will not be ${vIng} ${O} at 10 AM tomorrow.`.trim()
         },
         interrogative: {
@@ -706,14 +977,14 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif)' : undefined,
         positive: isApplicablePassive ? {
-          formula: '(+) S + will + be + being + V3',
+          formula: '(+) S + will be + being + V3',
           sentence: `${O_Cap} will be being ${v3} by ${sLower} at 10 AM tomorrow.`.trim(),
           meaning: `${O_Cap} akan sedang di-${v3} oleh ${sLower} jam 10 pagi besok.`
         } : undefined,
         negative: isApplicablePassive ? {
-          formula: '(-) S + will + not + be + being + V3',
+          formula: '(-) S + will not be + being + V3',
           sentence: `${O_Cap} will not be being ${v3} by ${sLower} at 10 AM tomorrow.`.trim()
         } : undefined,
         interrogative: isApplicablePassive ? {
@@ -727,23 +998,23 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
     {
       id: 9,
       tenseName: 'Future Perfect Tense',
-      timeSignal: 'by next month, by December, by 2030',
-      usageContext: 'Menyatakan aksi yang akan sudah selesai pada waktu tertentu di masa depan.',
-      toBeExplanation: 'Auxiliary Verb: "will have" + V3. Bentuk Pasif: "will have been" + V3.',
+      timeSignal: 'by next month, by the end of this year',
+      usageContext: 'Menyatakan aksi yang ditargetkan selesai sepenuhnya pada tenggat waktu tertentu di masa depan.',
+      toBeExplanation: 'Auxiliary Verb: "will have" + V3. Pasif: "will have been" + V3.',
       toBeStructure: {
-        auxiliaryText: 'will have + V3 → (berlaku universal untuk semua subjek)',
+        auxiliaryText: 'will have + V3 → (Berlaku untuk seluruh subjek)',
         toBeText: 'will have been + V3 (Bentuk Pasif)',
-        passiveNote: 'Menyatakan target penuntasan aksi di masa mendatang.'
+        passiveNote: 'Menyatakan kepastian target waktu penyelesaian.'
       },
       category: 'tambahan',
       activeVoice: {
         positive: {
-          formula: '(+) S + will + have + V3 + O',
+          formula: '(+) S + will have + V3 + O',
           sentence: `${S} will have ${v3} ${O} by next month.`.trim(),
-          meaning: `${S} akan telah ${meaningVerbID} menjelang bulan depan.`
+          meaning: `${S} akan telah ${meaningVerbID} ${O} menjelang bulan depan.`.replace(/\s+/g, ' ').trim()
         },
         negative: {
-          formula: '(-) S + will + not + have + V3 + O',
+          formula: '(-) S + will not have + V3 + O',
           sentence: `${S} will not have ${v3} ${O} by next month.`.trim()
         },
         interrogative: {
@@ -753,14 +1024,14 @@ export function generateSmartTenses(wordObj: Word): SmartTensesResult {
       },
       passiveVoice: {
         isApplicable: isApplicablePassive,
-        note: !isApplicablePassive ? 'N/A (Intransitive Verb - Tidak Memiliki Bentuk Pasif dalam Bahasa Inggris)' : undefined,
+        note: !isApplicablePassive ? 'N/A (Bukan Kata Kerja Transitif)' : undefined,
         positive: isApplicablePassive ? {
-          formula: '(+) S + will + have + been + V3',
+          formula: '(+) S + will have + been + V3',
           sentence: `${O_Cap} will have been ${v3} by ${sLower} by next month.`.trim(),
           meaning: `${O_Cap} akan telah di-${v3} oleh ${sLower} menjelang bulan depan.`
         } : undefined,
         negative: isApplicablePassive ? {
-          formula: '(-) S + will + not + have + been + V3',
+          formula: '(-) S + will not have + been + V3',
           sentence: `${O_Cap} will not have been ${v3} by ${sLower} by next month.`.trim()
         } : undefined,
         interrogative: isApplicablePassive ? {
