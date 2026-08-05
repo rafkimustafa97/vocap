@@ -1,4 +1,5 @@
 import json
+import re
 import urllib.request
 import ssl
 
@@ -6,14 +7,22 @@ SUPABASE_URL = "https://tfyuvlouxwbtnqchklxa.supabase.co"
 SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmeXV2bG91eHdidG5xY2hrbHhhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTg4Mjk4OCwiZXhwIjoyMTAxNDU4OTg4fQ.Gae9b_7L9UZnlqUL9rBpbxyu7AmbTrRHhQR3VC24dho"
 
 def seed_database():
-    print("Loading 3,655 master words from json...")
-    with open("src/data/words3655.json", "r", encoding="utf-8") as f:
-        words = json.load(f)
-    print(f"Loaded {len(words)} words.")
+    print("Loading enriched master words from wordsMaster.ts...")
+    with open("src/data/wordsMaster.ts", "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Extract JSON string array from TS file
+    match = re.search(r'export const MASTER_WORDS: Word\[\] = (\[.*\]);', content, re.DOTALL)
+    if not match:
+        print("Error: Could not find MASTER_WORDS in wordsMaster.ts")
+        return
+
+    words = json.loads(match.group(1))
+    print(f"Loaded {len(words)} enriched words.")
 
     ctx = ssl.create_default_context()
     
-    # 1. Prepare master_words records
+    # Prepare master_words records for Supabase
     master_records = []
     for w in words:
         master_records.append({
@@ -24,7 +33,7 @@ def seed_database():
             "ipa": w.get("ipa", ""),
             "ipa_perkiraan": w.get("ipa_perkiraan", ""),
             "meaning_id": w["meaning_id"],
-            "example_sentence": w.get("example_sentence", ""),
+            "example_sentence": w.get("example", ""),
             "source": w.get("source", "AWL"),
             "priority": w.get("priority", "Tinggi"),
             "synonyms": w.get("synonyms", []),
@@ -40,7 +49,7 @@ def seed_database():
     chunk_size = 500
     total_chunks = (len(master_records) + chunk_size - 1) // chunk_size
 
-    print("Seeding master_words table...")
+    print("Seeding/updating master_words table in Supabase...")
     for i in range(total_chunks):
         chunk = master_records[i * chunk_size : (i + 1) * chunk_size]
         req = urllib.request.Request(
@@ -58,11 +67,9 @@ def seed_database():
             with urllib.request.urlopen(req, context=ctx) as res:
                 print(f" Chunk {i+1}/{total_chunks} seeded successfully (Status {res.status})")
         except Exception as e:
-            print(f" Chunk {i+1}/{total_chunks} failed: {e}")
-            return False
+            print(f" Error seeding chunk {i+1}: {e}")
 
-    print("Successfully seeded 3,655 master words into Supabase!")
-    return True
+    print("Supabase database seeding completed successfully!")
 
 if __name__ == "__main__":
     seed_database()

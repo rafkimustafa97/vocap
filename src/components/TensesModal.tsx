@@ -19,6 +19,8 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
   const matrixData = generateSmartTenses(word);
   const filteredTenses = matrixData.tensesMatrix.filter((t) => t.category === activeTab);
 
+  const isMainVerb = word.pos ? word.pos.toLowerCase().includes('verb') : false;
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 md:p-4 overflow-y-auto">
       <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in duration-200">
@@ -33,8 +35,8 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
               <span className="bg-indigo-300/30 text-indigo-100 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase">
                 {word.source || 'Vocab'}
               </span>
-              <span className="bg-emerald-400/20 text-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-emerald-300/30">
-                PTE & IELTS Register
+              <span className="bg-emerald-400/20 text-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-emerald-300/30 uppercase">
+                {word.pos}
               </span>
             </div>
 
@@ -67,22 +69,39 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
         {/* Verb Inflection & Compact Header Bar */}
         <div className="bg-slate-900 text-slate-200 px-5 py-3 border-b border-slate-800 shrink-0 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
-              <span className="text-slate-400 uppercase font-bold">Verb Inflections:</span>
-              <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V1: {matrixData.inflections.v1}</span>
-              <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V1(+s): {matrixData.inflections.v1Singular}</span>
-              <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V2: {matrixData.inflections.v2}</span>
-              <span className="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V3: {matrixData.inflections.v3}</span>
-              <span className="bg-slate-800 text-purple-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V-ing: {matrixData.inflections.vIng}</span>
-            </div>
+            
+            {/* Conditional POS / Verb Inflections Header */}
+            {!isMainVerb ? (
+              <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
+                <span className="text-slate-400 uppercase font-bold">Word Class:</span>
+                <span className="bg-slate-800 text-amber-300 px-2.5 py-0.5 rounded border border-slate-700 font-bold uppercase">
+                  {word.pos}
+                </span>
+                <span className="text-slate-400 font-bold">| Context Pattern:</span>
+                <span className="bg-slate-800 text-emerald-300 px-2.5 py-0.5 rounded border border-slate-700 font-bold">
+                  Nominal (To Be + {word.pos})
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 font-mono text-[11px] flex-wrap">
+                <span className="text-slate-400 uppercase font-bold">Verb Inflections:</span>
+                <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V1: {matrixData.inflections.v1}</span>
+                <span className="bg-slate-800 text-blue-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V1(+s): {matrixData.inflections.v1Singular}</span>
+                <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V2: {matrixData.inflections.v2}</span>
+                <span className="bg-slate-800 text-emerald-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V3: {matrixData.inflections.v3}</span>
+                <span className="bg-slate-800 text-purple-300 px-2 py-0.5 rounded border border-slate-700 font-bold">V-ing: {matrixData.inflections.vIng}</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                 matrixData.transitivity === 'Transitive'
                   ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700'
+                  : matrixData.transitivity === 'Nominal'
+                  ? 'bg-purple-900/60 text-purple-300 border-purple-700'
                   : 'bg-amber-900/60 text-amber-300 border-amber-700'
               }`}>
-                {matrixData.transitivity} Verb
+                {matrixData.transitivity} {matrixData.transitivity === 'Nominal' ? 'Structure' : 'Verb'}
               </span>
 
               {/* COLLAPSE / EXPAND TOGGLE BUTTON */}
@@ -139,26 +158,42 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
                   <span>Analisis Afiksasi (Prefix & Suffix) & Word Family:</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                  <div className="bg-indigo-50/60 p-2 rounded-lg border border-indigo-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+                  <div className="bg-indigo-50/60 p-2.5 rounded-lg border border-indigo-100">
                     <span className="text-indigo-600 font-bold block">Awalan (Prefix):</span>
-                    <span className="font-black text-indigo-900">{matrixData.affixAnalysis.prefix}</span>
-                    <p className="text-[10px] text-indigo-700/80 leading-tight mt-0.5">{matrixData.affixAnalysis.prefixMeaning}</p>
+                    <span className="font-black text-indigo-900 block mt-0.5">
+                      {word.prefix_info ? word.prefix_info : matrixData.affixAnalysis.prefix}
+                    </span>
+                    <p className="text-[10px] text-indigo-700/80 leading-tight mt-0.5">
+                      {matrixData.affixAnalysis.prefixMeaning}
+                    </p>
                   </div>
 
-                  <div className="bg-purple-50/60 p-2 rounded-lg border border-purple-100">
+                  <div className="bg-purple-50/60 p-2.5 rounded-lg border border-purple-100">
                     <span className="text-purple-600 font-bold block">Akhiran (Suffix):</span>
-                    <span className="font-black text-purple-900">{matrixData.affixAnalysis.suffix}</span>
-                    <p className="text-[10px] text-purple-700/80 leading-tight mt-0.5">{matrixData.affixAnalysis.suffixFunction}</p>
+                    <span className="font-black text-purple-900 block mt-0.5">
+                      {word.suffix_info ? word.suffix_info : matrixData.affixAnalysis.suffix}
+                    </span>
+                    <p className="text-[10px] text-purple-700/80 leading-tight mt-0.5">
+                      {matrixData.affixAnalysis.suffixFunction}
+                    </p>
                   </div>
 
-                  <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 col-span-2">
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 sm:col-span-2">
                     <span className="text-slate-600 font-bold block">Word Family Derivations:</span>
                     <div className="flex flex-wrap gap-1.5 mt-1 font-mono text-[10px]">
-                      <span className="bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded">Noun: {matrixData.affixAnalysis.wordFamily.noun}</span>
-                      <span className="bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded">Verb: {matrixData.affixAnalysis.wordFamily.verb}</span>
-                      <span className="bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded">Adj: {matrixData.affixAnalysis.wordFamily.adjective}</span>
-                      <span className="bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded">Adv: {matrixData.affixAnalysis.wordFamily.adverb}</span>
+                      <span className="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">
+                        Noun: {word.noun_family || matrixData.affixAnalysis.wordFamily.noun}
+                      </span>
+                      <span className="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">
+                        Verb: {word.verb_family || matrixData.affixAnalysis.wordFamily.verb}
+                      </span>
+                      <span className="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">
+                        Adj: {word.adj_family || matrixData.affixAnalysis.wordFamily.adjective}
+                      </span>
+                      <span className="bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">
+                        Adv: {word.adv_family || matrixData.affixAnalysis.wordFamily.adverb}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -167,7 +202,7 @@ export const TensesModal: React.FC<TensesModalProps> = ({ word, isOpen, onClose 
           )}
         </div>
 
-        {/* Tab Navigation (Simplified to Tenses Dasar & 4 Tenses Tambahan as requested in Gambar 2) */}
+        {/* Tab Navigation */}
         <div className="flex border-b border-slate-200 bg-white shrink-0">
           <button
             type="button"
