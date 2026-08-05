@@ -67,18 +67,47 @@ export default function App() {
   const [isSqlModalOpen, setIsSqlModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
-  // Auto-listen to Supabase OAuth Session redirects (Google 1-Click Login)
+  // Helper function to handle user login state from Supabase OAuth
+  const processSessionUser = (sessionUser: any) => {
+    if (!sessionUser?.email) return;
+    const email = sessionUser.email.toLowerCase().trim();
+    const name = sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || email.split('@')[0];
+
+    setActiveUserEmail(email);
+    setActiveEmail(email);
+
+    const loaded = loadUserData(email);
+    if (name && loaded.profile.name !== name) {
+      loaded.profile.name = name;
+    }
+
+    setUserData(loaded);
+    setActiveView('dashboard');
+
+    // Clean hash from address bar (e.g. remove #access_token=...)
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  };
+
+  // Auto-listen & process Supabase OAuth Session redirects (Google 1-Click Login)
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user?.email) {
-        const email = session.user.email;
-        const name = session.user.user_metadata?.full_name || email.split('@')[0];
-        handleAuthSuccess(email, name);
+    // 1. Initial Session Check (processes hash fragment if redirected from OAuth)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        processSessionUser(session.user);
+      }
+    });
+
+    // 2. Realtime Auth State Change Listener
+    const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        processSessionUser(session.user);
       }
     });
 
     return () => {
-      authListener?.subscription.unsubscribe();
+      authSubscription?.subscription.unsubscribe();
     };
   }, []);
 
@@ -99,10 +128,11 @@ export default function App() {
   };
 
   const handleAuthSuccess = (email: string, name?: string) => {
-    setActiveUserEmail(email);
-    setActiveEmail(email);
+    const cleanEmail = email.toLowerCase().trim();
+    setActiveUserEmail(cleanEmail);
+    setActiveEmail(cleanEmail);
     
-    let loaded = loadUserData(email);
+    let loaded = loadUserData(cleanEmail);
     if (name && loaded.profile.name !== name) {
       loaded = {
         ...loaded,
