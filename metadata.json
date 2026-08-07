@@ -1,0 +1,6 @@
+{
+  "name": "Lumina Learn: PTE Academic Vocabulary Hub",
+  "description": "Comprehensive PTE Academic Vocabulary & Learning Hub with adaptive mistake-centric quizzes, 9 tenses contextualizer, word family explorer, and dynamic study scheduler.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

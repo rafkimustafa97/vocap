@@ -1,0 +1,23 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+.vercel
+
+# Temporary development scratch scripts
+fix_*.py
+patch_*.py
+test_*.py
+test_*.js
+test_*.ts
+count_*.py
+check_*.py
+rewrite_*.py
+update_*.py
+parse_test.cjs
+bun.lock
