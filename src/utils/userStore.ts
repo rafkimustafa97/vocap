@@ -281,6 +281,12 @@ export async function fetchCloudUserData(email: string): Promise<UserDataState |
 
     if (data && data.user_data) {
       const cloudState = data.user_data as UserDataState;
+      // If user record exists in Supabase DB, onboarding setup is ALREADY completed!
+      if (!cloudState.settings) {
+        cloudState.settings = { pace: 30, startDate: new Date().toISOString().split('T')[0], locked: true };
+      } else {
+        cloudState.settings.locked = true;
+      }
       saveUserData(cleanEmail, cloudState);
       return cloudState;
     }

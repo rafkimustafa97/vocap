@@ -175,38 +175,65 @@ export default function App() {
     };
   }, []);
 
+  const [isCloudLoading, setIsCloudLoading] = useState<boolean>(true);
+
   // Auto-fetch cloud user progress from Supabase database whenever activeEmail changes
   useEffect(() => {
-    if (!activeEmail) return;
+    if (!activeEmail) {
+      setIsCloudLoading(false);
+      return;
+    }
 
     let isMounted = true;
-    fetchCloudUserData(activeEmail).then((cloudData) => {
-      if (!isMounted || !cloudData) return;
+    setIsCloudLoading(true);
 
-      setUserData((prevLocal) => {
-        if (!prevLocal) return cloudData;
+    fetchCloudUserData(activeEmail)
+      .then((cloudData) => {
+        if (!isMounted) return;
+        setIsCloudLoading(false);
 
-        const localXp = prevLocal.xp || 0;
-        const cloudXp = cloudData.xp || 0;
-        const localMasteredCount = Object.values(prevLocal.userStats || {}).filter((s) => s.status === 'mastered').length;
-        const cloudMasteredCount = Object.values(cloudData.userStats || {}).filter((s) => s.status === 'mastered').length;
+        if (!cloudData) return;
 
-        // If cloud data has equal or higher progress, adopt cloud data!
-        if (cloudXp >= localXp || cloudMasteredCount >= localMasteredCount) {
-          return {
-            ...cloudData,
+        setUserData((prevLocal) => {
+          if (!prevLocal) {
+            const dataWithLocked = {
+              ...cloudData,
+              settings: {
+                ...(cloudData.settings || { pace: 30, startDate: new Date().toISOString().split('T')[0] }),
+                locked: true
+              }
+            };
+            syncCloudUserData(activeEmail, dataWithLocked);
+            return dataWithLocked;
+          }
+
+          const localXp = prevLocal.xp || 0;
+          const cloudXp = cloudData.xp || 0;
+          const localMasteredCount = Object.values(prevLocal.userStats || {}).filter((s) => s.status === 'mastered').length;
+          const cloudMasteredCount = Object.values(cloudData.userStats || {}).filter((s) => s.status === 'mastered').length;
+
+          const chosenBase = (cloudXp >= localXp || cloudMasteredCount >= localMasteredCount) ? cloudData : prevLocal;
+
+          const merged = {
+            ...chosenBase,
+            settings: {
+              ...(chosenBase.settings || { pace: 30, startDate: new Date().toISOString().split('T')[0] }),
+              locked: true
+            },
             profile: {
-              ...cloudData.profile,
-              name: prevLocal.profile.name || cloudData.profile.name
+              ...chosenBase.profile,
+              name: prevLocal.profile.name || cloudData.profile.name || chosenBase.profile.name
             }
           };
-        }
 
-        // If local data has unsynced local changes, sync local data up to cloud!
-        syncCloudUserData(activeEmail, prevLocal);
-        return prevLocal;
+          syncCloudUserData(activeEmail, merged);
+          return merged;
+        });
+      })
+      .catch((err) => {
+        console.error('Failed to fetch cloud user data:', err);
+        if (isMounted) setIsCloudLoading(false);
       });
-    });
 
     return () => {
       isMounted = false;
@@ -677,9 +704,9 @@ export default function App() {
         />
       )}
 
-      {isAuthenticated && (
+      {isAuthenticated && !isCloudLoading && !userData.settings.locked && (
         <OnboardingModal
-          isOpen={!userData.settings.locked}
+          isOpen={true}
           onConfirm={handleOnboardingConfirm}
         />
       )}
